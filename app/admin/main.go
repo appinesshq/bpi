@@ -12,6 +12,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+// TODO: Profiles
+// TODO: Countries + seeding
+// TODO: Jurisdictions + seeding
+// TODO: Email and password hashing
+// TODO: Authentication
+
 // build is the git version of this program. It is set using build flags in the makefile.
 var build = "develop"
 

@@ -22,7 +22,7 @@ var (
 func Add(ctx context.Context, gql *graphql.GraphQL, nu NewUser) (User, error) {
 	u := User{
 		Email:    nu.Email,
-		Password: nu.Password, // TODO: Password hashing
+		Password: nu.Password,
 	}
 
 	u, err := add(ctx, gql, u)
