@@ -1,185 +1,28 @@
 SHELL := /bin/bash
 
-# ==============================================================================
-# Building containers
-
-all: api ui
-
-api:
-	docker build \
-		-f zarf/docker/dockerfile.bpi-api \
-		-t bpi-api-amd64:1.0 \
-		--build-arg VCS_REF=`git rev-parse HEAD` \
-		--build-arg BUILD_DATE=`date -u +”%Y-%m-%dT%H:%M:%SZ”` \
-		.
-
-ui:
-	docker build \
-		-f zarf/docker/dockerfile.bpi-ui \
-		-t bpi-ui-amd64:1.0 \
-		--build-arg VCS_REF=`git rev-parse HEAD` \
-		--build-arg BUILD_DATE=`date -u +”%Y-%m-%dT%H:%M:%SZ”` \
-		.
-
-# ==============================================================================
 # Running from within docker compose
 
-run: up seed browse
+run: up
 
 up:
-	docker-compose -f zarf/compose/compose.yaml -f zarf/compose/compose-config.yaml up --detach --remove-orphans
+	docker-compose -f compose.yaml up --detach --remove-orphans
 
 down:
-	docker-compose -f zarf/compose/compose.yaml down --remove-orphans
-
-browse:
-	python -m webbrowser "http://localhost"
+	docker-compose -f compose.yaml down --remove-orphans
 
 logs:
-	docker-compose -f zarf/compose/compose.yaml logs -f
+	docker-compose -f compose.yaml logs -f
 
-# ==============================================================================
-# Running from within k8s/dev
-
-kind-up:
-	kind create cluster --image kindest/node:v1.19.1 --name bpi-cluster --config zarf/k8s/dev/kind-config.yaml
-
-kind-down:
-	kind delete cluster --name bpi-cluster
-
-kind-load:
-	kind load docker-image bpi-api-amd64:1.0 --name bpi-cluster
-	kind load docker-image bpi-ui-amd64:1.0 --name bpi-cluster
-
-kind-services:
-	kustomize build zarf/k8s/dev | kubectl apply -f -
-
-kind-api: api
-	kind load docker-image bpi-api-amd64:1.0 --name bpi-cluster
-	kubectl delete pods -lapp=bpi
-
-kind-ui: ui
-	kind load docker-image bpi-ui-amd64:1.0 --name bpi-cluster
-	kubectl delete pods -lapp=bpi
-
-kind-logs:
-	kubectl logs -lapp=bpi --all-containers=true -f
-
-kind-status:
-	kubectl get nodes
-	kubectl get pods --watch
-
-kind-status-full:
-	kubectl describe pod -lapp=bpi
-
-kind-delete:
-	kustomize build . | kubectl delete -f -
-
-kind-schema:
-	go run app/bpi-admin/main.go --custom-functions-upload-feed-url=http://localhost:3000/v1/feed/upload schema
-
-kind-seed: kind-schema
-	go run app/bpi-admin/main.go seed 
-
-# ==============================================================================
-# Running from within the local with Slash
-
-slash-run: slash-up seed slash-browse
-
-slash-up:
-	docker-compose -f zarf/compose/compose-slash.yaml -f zarf/compose/compose-slash-config.yaml up --detach --remove-orphans
-
-slash-down:
-	docker-compose -f zarf/compose/compose-slash.yaml down --remove-orphans
-
-slash-browse:
-	python -m webbrowser "http://localhost"
-
-slash-logs:
-	docker-compose -f zarf/compose/compose-slash.yaml logs -f
-
-# ==============================================================================
-# Running Local
-
-local-run: local-up seed browse
-
-local-up:
-	go run app/bpi-api/main.go &> api.log &
-	cd app/bpi-ui; \
-	go run main.go &> ../../ui.log &
-
-API := $(shell lsof -i tcp:4000 | cut -c9-13 | grep "[0-9]")
-UI := $(shell lsof -i tcp:4080 | cut -c9-13 | grep "[0-9]")
-
-ps:
-	lsof -i tcp:4000; \
-	lsof -i tcp:4080
-
-local-down:
-	kill -15 $(API); \
-	kill -15 $(UI); \
-	rm *.log
-
-api-logs:
-	tail -F api.log
-
-ui-logs:
-	tail -F ui.log
-
-# ==============================================================================
 # Administration
 
 schema:
-	go run app/bpi-admin/main.go schema
+	go run app/admin/main.go schema
 
-seed: schema
-	go run app/bpi-admin/main.go seed
+seed:
+	go run app/admin/main.go seed
 
 # Running tests within the local computer
 
 test:
 	go test ./... -count=1
 	staticcheck ./...
-
-# Modules support
-
-deps-reset:
-	git checkout -- go.mod
-	go mod tidy
-	go mod vendor
-
-tidy:
-	go mod tidy
-	go mod vendor
-
-deps-upgrade:
-	go get -u -t -d -v ./...
-	go mod tidy
-	go mod vendor
-
-deps-cleancache:
-	go clean -modcache
-
-# ==============================================================================
-# Docker support
-
-FILES := $(shell docker ps -aq)
-
-down-local:
-	docker stop $(FILES)
-	docker rm $(FILES)
-
-clean:
-	docker system prune -f
-
-logs-local:
-	docker logs -f $(FILES)
-
-# ==============================================================================
-# Git support
-
-install-hooks:
-	cp -r .githooks/pre-commit .git/hooks/pre-commit
-
-remove-hooks:
-	rm .git/hooks/pre-commit

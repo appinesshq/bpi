@@ -2,34 +2,35 @@
 package schema
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"regexp"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/ardanlabs/graphql"
 	"github.com/pkg/errors"
 )
 
+// document represents the schema for the project.
+var document = `
+type User {
+	id: ID!
+	source_id: String!
+	source: String!
+	screen_name: String! @search(by: [exact])
+	name: String!
+	location: String
+	friends_count: Int
+	friends: [User]
+}
+`
+
 // Schema error variables.
 var (
 	ErrNoSchemaExists = errors.New("no schema exists")
 	ErrInvalidSchema  = errors.New("schema doesn't match")
 )
-
-// CustomFunctions is the set of custom functions defined in the schema. The
-// URL to the function is required as part of the function declaration.
-type CustomFunctions struct {
-	UploadFeedURL string
-}
-
-// Config contains information required for the schema document.
-type Config struct {
-	CustomFunctions
-}
 
 // Schema provides support for schema operations against the database.
 type Schema struct {
@@ -38,33 +39,13 @@ type Schema struct {
 }
 
 // New constructs a Schema value for use to manage the schema.
-func New(graphql *graphql.GraphQL, config Config) (*Schema, error) {
-
-	// The actual CRLF (\n) must be converted to the characters '\n' so the
-	// entire key sits on one line.
-	publicKey := strings.ReplaceAll(schema.publicKey, "\n", "\\n")
-
-	// Create the final schema document with the variable replacments by
-	// processing the template.
-	tmpl := template.New("schema")
-	if _, err := tmpl.Parse(schema.document); err != nil {
-		return nil, errors.Wrap(err, "parsing template")
-	}
-	var document bytes.Buffer
-	vars := map[string]interface{}{
-		"UploadFeedURL": config.CustomFunctions.UploadFeedURL,
-		"PublicKey":     publicKey,
-	}
-	if err := tmpl.Execute(&document, vars); err != nil {
-		return nil, errors.Wrap(err, "executing template")
-	}
-
+func New(graphql *graphql.GraphQL) *Schema {
 	schema := Schema{
 		graphql:  graphql,
-		document: document.String(),
+		document: document,
 	}
 
-	return &schema, nil
+	return &schema
 }
 
 // DropAll perform an alter operatation against the configured server

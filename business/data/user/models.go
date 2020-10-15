@@ -1,25 +1,26 @@
 package user
 
-import "time"
-
-// Info represents someone with access to the system.
-type Info struct {
-	ID           string    `json:"id"`
-	Name         string    `json:"name"`
-	Email        string    `json:"email"`
-	Role         string    `json:"role"`
-	PasswordHash string    `json:"password_hash"`
-	DateCreated  time.Time `json:"date_created"`
-	DateUpdated  time.Time `json:"date_updated"`
+// User represents someone with access to the system.
+type User struct {
+	ID           string `json:"id"`
+	SourceID     string `json:"source_id"`
+	Source       string `json:"source"`
+	ScreenName   string `json:"screen_name"`
+	Name         string `json:"name"`
+	Location     string `json:"location"`
+	FriendsCount int    `json:"friends_count"`
+	Friends      []User `json:"friends"`
 }
 
 // NewUser contains information needed to create a new User.
 type NewUser struct {
-	Name            string `json:"name"`
-	Email           string `json:"email"`
-	Role            string `json:"role"`
-	Password        string `json:"password"`
-	PasswordConfirm string `json:"password_confirm"`
+	SourceID     string `json:"source_id"`
+	Source       string `json:"source"`
+	ScreenName   string `json:"screen_name"`
+	Name         string `json:"name"`
+	Location     string `json:"location"`
+	FriendsCount int    `json:"friends_count"`
+	Friends      []User `json:"friends"`
 }
 
 type addResult struct {
@@ -35,33 +36,5 @@ func (addResult) document() string {
 		user {
 			id
 		}
-	}`
-}
-
-type updateResult struct {
-	UpdateUser struct {
-		Msg     string
-		NumUids int
-	} `json:"updateUser"`
-}
-
-func (updateResult) document() string {
-	return `{
-		msg,
-		numUids,
-	}`
-}
-
-type deleteResult struct {
-	DeleteUser struct {
-		Msg     string
-		NumUids int
-	} `json:"deleteUser"`
-}
-
-func (deleteResult) document() string {
-	return `{
-		msg,
-		numUids,
 	}`
 }

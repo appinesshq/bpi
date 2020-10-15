@@ -1,12 +1,8 @@
-// Package tests contains supporting code for running tests.
+// Package tests provides foundational support for running unit and
+// integration tests.
 package tests
 
-import (
-	"fmt"
-	"log"
-	"os"
-	"testing"
-)
+import "testing"
 
 // Success and failure markers.
 const (
@@ -17,24 +13,22 @@ const (
 // Configuration for running tests.
 const (
 	dbImage = "dgraph/standalone:master"
-	dbPort  = "8080"
 )
 
 // NewUnit creates a test value with necessary application state to run
 // database tests. It will return the host to use to connect to the database.
-func NewUnit(t *testing.T) (*log.Logger, string, func()) {
-	c := startContainer(t, dbImage, dbPort)
+func NewUnit(t *testing.T) (url string, teardown func()) {
+
+	// Start a DB container instance with dgraph running.
+	c := startDBContainer(t, dbImage)
 
 	// teardown is the function that should be invoked when the caller is done
 	// with the database.
-	teardown := func() {
+	teardown = func() {
 		t.Helper()
 		t.Log("tearing down test ...")
 		stopContainer(t, c.ID)
 	}
 
-	url := fmt.Sprintf("http://%s", c.Host)
-	log := log.New(os.Stdout, "TEST : ", log.LstdFlags|log.Lmicroseconds|log.Lshortfile)
-
-	return log, url, teardown
+	return c.URL, teardown
 }

@@ -3,19 +3,20 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net"
 	"os/exec"
 	"testing"
 )
 
-// Container tracks information about the docker container started for tests.
-type Container struct {
-	ID   string
-	Host string // IP:Port
+// DBContainer tracks information about the DB docker container started for tests.
+type DBContainer struct {
+	ID  string
+	URL string
 }
 
-func startContainer(t *testing.T, image string, port string) *Container {
-	cmd := exec.Command("docker", "run", "-P", "-d", image)
+func startDBContainer(t *testing.T, image string) *DBContainer {
+	cmd := exec.Command("docker", "run", "-d", "-P", image)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	if err := cmd.Run(); err != nil {
@@ -31,25 +32,34 @@ func startContainer(t *testing.T, image string, port string) *Container {
 		t.Fatalf("could not inspect container %s: %v", id, err)
 	}
 
-	var doc []map[string]interface{}
+	var doc []struct {
+		NetworkSettings struct {
+			Ports struct {
+				TCP8080 []struct {
+					HostIP   string `json:"HostIp"`
+					HostPort string `json:"HostPort"`
+				} `json:"8080/tcp"`
+			} `json:"Ports"`
+		} `json:"NetworkSettings"`
+	}
 	if err := json.Unmarshal(out.Bytes(), &doc); err != nil {
 		t.Fatalf("could not decode json: %v", err)
 	}
 
-	ip, randPort := extractIPPort(t, doc, port)
+	endpoint := doc[0].NetworkSettings.Ports.TCP8080[0]
 
-	c := Container{
-		ID:   id,
-		Host: net.JoinHostPort(ip, randPort),
+	c := DBContainer{
+		ID:  id,
+		URL: fmt.Sprintf("http://%s", net.JoinHostPort(endpoint.HostIP, endpoint.HostPort)),
 	}
 
-	t.Logf("Image:       %s", image)
-	t.Logf("ContainerID: %s", c.ID)
-	t.Logf("Host:        %s", c.Host)
-
+	t.Logf("Image:          %s", image)
+	t.Logf("DB ContainerID: %s", c.ID)
+	t.Logf("URL:            %s", c.URL)
 	return &c
 }
 
+// stopContainer stops and removes the specified container.
 func stopContainer(t *testing.T, id string) {
 	if err := exec.Command("docker", "stop", id).Run(); err != nil {
 		t.Fatalf("could not stop container: %v", err)
@@ -60,32 +70,4 @@ func stopContainer(t *testing.T, id string) {
 		t.Fatalf("could not remove container: %v", err)
 	}
 	t.Log("Removed:", id)
-}
-
-func extractIPPort(t *testing.T, doc []map[string]interface{}, port string) (string, string) {
-	nw, exists := doc[0]["NetworkSettings"]
-	if !exists {
-		t.Fatal("could not get network settings")
-	}
-	ports, exists := nw.(map[string]interface{})["Ports"]
-	if !exists {
-		t.Fatal("could not get network ports settings")
-	}
-	tcp, exists := ports.(map[string]interface{})[port+"/tcp"]
-	if !exists {
-		t.Fatal("could not get network ports/tcp settings")
-	}
-	list, exists := tcp.([]interface{})
-	if !exists {
-		t.Fatal("could not get network ports/tcp list settings")
-	}
-	if len(list) != 1 {
-		t.Fatal("could not get network ports/tcp list settings")
-	}
-	data, exists := list[0].(map[string]interface{})
-	if !exists {
-		t.Fatal("could not get network ports/tcp list data")
-	}
-
-	return data["HostIp"].(string), data["HostPort"].(string)
 }

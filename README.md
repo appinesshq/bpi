@@ -1,33 +1,65 @@
-# BPI - Business Platform Infrastructure
+# Dgraph
 
-[![CircleCI](https://circleci.com/gh/appinesshq/bpi.svg?style=svg)](https://circleci.com/gh/appinesshq/bpi.svg)
-
-Copyright (c) 2020 [MB Appiness Solutions](https://appiness.solutions)
-[office@appiness.solutions](mailto://office@appiness.solutions)
+Copyright 2020 Ardan Labs  
+bill@ardanlabs.com
 
 ## Licensing
 
 ```
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 ```
 
 ## About The Project
 
-The BPI project is the open source infrastructure serving [doing business in europe](https://doingbusinessineurope.com) and [global business guide](https://globalbusinessguide.net). The purpose of the project is to create a community based interactive platform for knowledge sharing about doing business in and beyond Europe. The platform functions as a knowledge base and network for entrepreneurs and service providers.
+Please read the project wiki (Comming Soon)
 
-This repo provides the backend and web frontend as a monorepo for all code using Go. The mobile clients will get their own repo.
+https://github.com/ardanlabs/dgraph/wiki
 
-Please read the project wiki (WIP).
+## Learn More
 
-https://github.com/appinesshq/bpi/wiki
+**To learn about Corporate training events please contact Ardan Labs:**
+
+William Kennedy  
+ArdanLabs (www.ardanlabs.com)  
+bill@ardanlabs.com  
+
+
+Getting Started
+https://developer.twitter.com/en/docs/basics/getting-started
+
+Get an account
+https://developer.twitter.com/en/docs/basics/developer-portal/overview
+
+Apply for a developer account
+https://developer.twitter.com/en/application/use-case
+
+Create an App
+
+curl -u ${DGRAPH_TWITTER_API_KEY}:${DGRAPH_TWITTER_SECRET_KEY} \
+  --data 'grant_type=client_credentials' \
+  'https://api.twitter.com/oauth2/token'
+
+curl --request GET \
+  --url https://api.twitter.com/1.1/friends/ids.json?screen_name=goinggodotnet \
+  --header "authorization: bearer ${TWITTER_TOKEN}" \
+  --header "content-type: application/json"
+
+curl --request GET \
+  --url https://api.twitter.com/1.1/users/show.json?user_id=699263 \
+  --header "authorization: bearer ${TWITTER_TOKEN}" \
+  --header "content-type: application/json"
+
+  curl --request GET \
+  --url https://api.twitter.com/1.1/users/show.json?screen_name=goinggodotnet \
+  --header "authorization: bearer ${TWITTER_TOKEN}" \
+  --header "content-type: application/json"

@@ -1,16 +1,12 @@
-// Package user provides support for managing users in the database.
+// Package user provides CRUD access to the database.
 package user
 
 import (
 	"context"
 	"fmt"
-	"log"
-	"time"
 
-	"github.com/appinesshq/bpi/business/data"
 	"github.com/ardanlabs/graphql"
 	"github.com/pkg/errors"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // Set of error variables for CRUD operations.
@@ -20,135 +16,127 @@ var (
 	ErrNotFound  = errors.New("user not found")
 )
 
-// User manages the set of API's for user access.
-type User struct {
-	log *log.Logger
-	gql *graphql.GraphQL
-}
-
-// New constructs a User for api access.
-func New(log *log.Logger, gql *graphql.GraphQL) User {
-	return User{
-		log: log,
-		gql: gql,
-	}
-}
-
 // Add adds a new user to the database. If the user already exists
 // this function will fail but the found user is returned. If the user is
 // being added, the user with the id from the database is returned.
-func (u User) Add(ctx context.Context, traceID string, nu NewUser, now time.Time) (Info, error) {
-	if usr, err := u.QueryByEmail(ctx, traceID, nu.Email); err == nil {
-		return usr, ErrExists
-	}
-
-	hash, err := bcrypt.GenerateFromPassword([]byte(nu.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return Info{}, errors.Wrap(err, "generating password hash")
-	}
-
-	usr := Info{
+func Add(ctx context.Context, gql *graphql.GraphQL, nu NewUser) (User, error) {
+	u := User{
+		SourceID:     nu.SourceID,
+		Source:       nu.Source,
+		ScreenName:   nu.ScreenName,
 		Name:         nu.Name,
-		Email:        nu.Email,
-		Role:         nu.Role,
-		PasswordHash: string(hash),
-		DateCreated:  now,
-		DateUpdated:  now,
+		Location:     nu.Location,
+		FriendsCount: nu.FriendsCount,
+		Friends:      nu.Friends,
 	}
 
-	usr, err = u.add(ctx, traceID, usr)
+	u, err := add(ctx, gql, u)
 	if err != nil {
-		return Info{}, errors.Wrap(err, "adding user to database")
+		return User{}, errors.Wrap(err, "adding user to database")
 	}
 
-	return usr, nil
+	return u, nil
 }
 
-// Update updates a user in the database by its ID. If the user doesn't
-// already exist, this function will fail.
-func (u User) Update(ctx context.Context, traceID string, usr Info) error {
-	if _, err := u.QueryByID(ctx, traceID, usr.ID); err != nil {
-		return ErrNotExists
-	}
+// AddFriend adds a new user to the database if the user doesn't already exist.
+// Then the user is added to the collection of friends for the specified user id.
+func AddFriend(ctx context.Context, gql *graphql.GraphQL, userID string, nu NewUser) (User, error) {
+	// Validate the user doesn't already exists by screen name.
+	// Validate the user isn't already in the list of friends for userID.
+	/*
+		mutation {
+			updateUser(input: {
+				filter: {
+					id: ["0x04"]
+				},
+				set: {
+					friends: [{
+						id: "0x06"
+					}]
+				}
+			})
+			{
+				numUids
+			}
+		}
 
-	if err := u.update(ctx, traceID, usr); err != nil {
-		return errors.Wrap(err, "updating user in database")
-	}
+		mutation {
+		updateUser(input: {
+				filter: {
+					id: ["0x04"]
+				},
+				set: {
+					friends: [{
+						source_id: "4444444444"
+						source: "source"
+						screen_name: "jacksmith"
+						name: "jack smith"
+						location: "Miami, FL"
+					}]
+				}
+			})
+			{
+				numUids
+			}
+		}
+	*/
 
-	return nil
+	return User{}, nil
 }
 
-// Delete removes a user from the database by its ID. If the user doesn't
-// already exist, this function will fail.
-func (u User) Delete(ctx context.Context, traceID string, userID string) error {
-	if _, err := u.QueryByID(ctx, traceID, userID); err != nil {
-		return ErrNotExists
-	}
-
-	if err := u.delete(ctx, traceID, userID); err != nil {
-		return errors.Wrap(err, "deleting user in database")
-	}
-
-	return nil
-}
-
-// QueryByID returns the specified user from the database by the city id.
-func (u User) QueryByID(ctx context.Context, traceID string, userID string) (Info, error) {
+// One returns the specified user from the database by the city id.
+func One(ctx context.Context, gql *graphql.GraphQL, userID string) (User, error) {
 	query := fmt.Sprintf(`
 query {
 	getUser(id: %q) {
 		id
+		source_id
+    	source
+		screen_name
 		name
-		email
-		role
-		password_hash
-		date_created
-		date_updated
+		location
+		friends_count
 	}
 }`, userID)
 
-	u.log.Printf("%s: %s: %s", traceID, "user.QueryByID", data.Log(query))
-
 	var result struct {
-		GetUser Info `json:"getUser"`
+		GetUser User `json:"getUser"`
 	}
-	if err := u.gql.Query(ctx, query, &result); err != nil {
-		return Info{}, errors.Wrap(err, "query failed")
+	if err := gql.Query(ctx, query, &result); err != nil {
+		return User{}, errors.Wrap(err, "query failed")
 	}
 
 	if result.GetUser.ID == "" {
-		return Info{}, ErrNotFound
+		return User{}, ErrNotFound
 	}
 
 	return result.GetUser, nil
 }
 
-// QueryByEmail returns the specified user from the database by email.
-func (u User) QueryByEmail(ctx context.Context, traceID string, email string) (Info, error) {
+// OneByScreenName returns the specified user from the database by screen name.
+func OneByScreenName(ctx context.Context, gql *graphql.GraphQL, screenName string) (User, error) {
 	query := fmt.Sprintf(`
 query {
-	queryUser(filter: { email: { eq: %q } }) {
+	queryUser(filter: { screen_name: { eq: %q } }) {
 		id
+		source_id
+    	source
+		screen_name
 		name
-		email
-		role
-		password_hash
-		date_created
-		date_updated
+		location
+		friends_count
 	}
-}`, email)
-
-	u.log.Printf("%s: %s: %s", traceID, "user.QueryByEmail", data.Log(query))
+}`, screenName)
 
 	var result struct {
-		QueryUser []Info `json:"queryUser"`
+		QueryUser []User `json:"queryUser"`
 	}
-	if err := u.gql.Query(ctx, query, &result); err != nil {
-		return Info{}, errors.Wrap(err, "query failed")
+	if err := gql.Query(ctx, query, &result); err != nil {
+		return User{}, errors.Wrap(err, "query failed")
 	}
 
 	if len(result.QueryUser) != 1 {
-		return Info{}, ErrNotFound
+		return User{}, ErrNotFound
 	}
 
 	return result.QueryUser[0], nil
@@ -156,118 +144,114 @@ query {
 
 // =============================================================================
 
-func (u User) add(ctx context.Context, traceID string, usr Info) (Info, error) {
-	mutation, result := prepareAdd(usr)
-	u.log.Printf("%s: %s: %s", traceID, "user.Add", data.Log(mutation))
-
-	if err := u.gql.Query(ctx, mutation, &result); err != nil {
-		return Info{}, errors.Wrap(err, "failed to add user")
+func add(ctx context.Context, gql *graphql.GraphQL, user User) (User, error) {
+	mutation, result := prepareAdd(user)
+	if err := gql.Query(ctx, mutation, &result); err != nil {
+		return User{}, errors.Wrap(err, "failed to add user")
 	}
 
 	if len(result.AddUser.User) != 1 {
-		return Info{}, errors.New("user id not returned")
+		return User{}, errors.New("user id not returned")
 	}
 
-	usr.ID = result.AddUser.User[0].ID
-	return usr, nil
+	user.ID = result.AddUser.User[0].ID
+	return user, nil
 }
 
-func (u User) update(ctx context.Context, traceID string, usr Info) error {
-	if usr.ID == "" {
-		return errors.New("user missing id")
-	}
-
-	mutation, result := prepareUpdate(usr)
-	u.log.Printf("%s: %s: %s", traceID, "user.Update", data.Log(mutation))
-
-	if err := u.gql.Query(ctx, mutation, nil); err != nil {
-		return errors.Wrap(err, "failed to update user")
-	}
-
-	if result.UpdateUser.NumUids != 1 {
-		msg := fmt.Sprintf("failed to update user: NumUids: %d  Msg: %s", result.UpdateUser.NumUids, result.UpdateUser.Msg)
-		return errors.New(msg)
-	}
-
-	return nil
-}
-
-func (u User) delete(ctx context.Context, traceID string, userID string) error {
-	if userID == "" {
-		return errors.New("missing user id")
-	}
-
-	mutation, result := prepareDelete(userID)
-	u.log.Printf("%s: %s: %s", traceID, "user.Delete", data.Log(mutation))
-
-	if err := u.gql.Query(ctx, mutation, nil); err != nil {
-		return errors.Wrap(err, "failed to delete user")
-	}
-
-	if result.DeleteUser.NumUids != 0 {
-		msg := fmt.Sprintf("failed to delete user: NumUids: %d  Msg: %s", result.DeleteUser.NumUids, result.DeleteUser.Msg)
-		return errors.New(msg)
-	}
-
-	return nil
-}
-
-// =============================================================================
-
-func prepareAdd(usr Info) (string, addResult) {
+func prepareAdd(user User) (string, addResult) {
 	var result addResult
 	mutation := fmt.Sprintf(`
 mutation {
 	addUser(input: [{
+		source_id: %q
+    	source: %q
+		screen_name: %q
 		name: %q
-		email: %q
-		role: %s
-		password_hash: %q
-		date_created: %q
-		date_updated: %q
+		location: %q
+		friends_count: %d
 	}])
 	%s
-}`, usr.Name, usr.Email, usr.Role, usr.PasswordHash,
-		usr.DateCreated.UTC().Format(time.RFC3339),
-		usr.DateUpdated.UTC().Format(time.RFC3339),
-		result.document())
+}`, user.SourceID, user.Source, user.ScreenName, user.Name,
+		user.Location, user.FriendsCount, result.document())
 
 	return mutation, result
 }
 
-func prepareUpdate(usr Info) (string, updateResult) {
-	var result updateResult
-	mutation := fmt.Sprintf(`
+/*
+mutation {
+	addUser(input: [{
+		source_id: "1111111111"
+    	source: "source"
+		screen_name: "goinggodotnet"
+		name: "bill kennedy"
+		location: "Miami, FL"
+	}])
+	{
+		user {
+			id
+		}
+	}
+}
+
 mutation {
 	updateUser(input: {
 		filter: {
-		  id: [%q]
+			id: ["0x04"]
 		},
 		set: {
-			name: %q
-			email: %q
-  			role: %s
-  			password_hash: %q
-  			date_created: %q
-  			date_updated: %q
+			friends: [{
+				id: "0x06"
+			}]
 		}
 	})
-	%s
-}`, usr.ID, usr.Name, usr.Email, usr.Role, usr.PasswordHash,
-		usr.DateCreated.UTC().Format(time.RFC3339),
-		usr.DateUpdated.UTC().Format(time.RFC3339),
-		result.document())
-
-	return mutation, result
+	{
+		numUids
+	}
 }
 
-func prepareDelete(userID string) (string, deleteResult) {
-	var result deleteResult
-	mutation := fmt.Sprintf(`
 mutation {
-	deleteUser(filter: { id: [%q] })
-	%s
-}`, userID, result.document())
-
-	return mutation, result
+  updateUser(input: {
+		filter: {
+    		id: ["0x04"]
+    	},
+    	set: {
+			friends: [{
+				source_id: "4444444444"
+				source: "source"
+				screen_name: "jacksmith"
+				name: "jack smith"
+				location: "Miami, FL"
+			}]
+    	}
+  	})
+	{
+    	numUids
+  	}
 }
+
+query {
+	queryUser(filter: { screen_name: { eq: "goinggodotnet" } })
+	{
+		id
+		source_id
+		source
+		screen_name
+		name
+		location
+		friends_count
+  	}
+}
+
+query {
+	getUser(id: "0x3")
+	{
+		id
+		source_id
+		source
+		screen_name
+		name
+		location
+		friends_count
+	}
+}
+*/
