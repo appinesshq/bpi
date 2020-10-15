@@ -37,8 +37,7 @@ github.com/leodido/go-urn
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
-# go.opencensus.io v0.22.5
-## explicit
+# go.opencensus.io v0.22.3
 go.opencensus.io/internal/tagencoding
 go.opencensus.io/metric/metricdata
 go.opencensus.io/metric/metricproducer
@@ -47,12 +46,11 @@ go.opencensus.io/stats
 go.opencensus.io/stats/internal
 go.opencensus.io/stats/view
 go.opencensus.io/tag
-# golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
+# golang.org/x/crypto v0.0.0-20201012173705-84dcc777aaee
 ## explicit
 golang.org/x/crypto/bcrypt
 golang.org/x/crypto/blowfish
-# golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
-## explicit
+# golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1
 golang.org/x/time/rate
 # googlemaps.github.io/maps v1.2.3
 ## explicit

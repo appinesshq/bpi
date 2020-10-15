@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/dgraph-io/travel/business/feeds/advisory"
-	"github.com/dgraph-io/travel/foundation/tests"
+	"github.com/appinesshq/bpi/business/feeds/advisory"
+	"github.com/appinesshq/bpi/foundation/tests"
 	"github.com/google/go-cmp/cmp"
 )
 

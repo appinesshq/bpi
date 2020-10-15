@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/dgraph-io/travel/business/data"
+	"github.com/appinesshq/bpi/business/data"
 	"github.com/pkg/errors"
 )
 

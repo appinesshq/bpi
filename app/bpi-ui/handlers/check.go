@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dgraph-io/travel/business/data"
-	"github.com/dgraph-io/travel/business/data/ready"
-	"github.com/dgraph-io/travel/foundation/web"
+	"github.com/appinesshq/bpi/business/data"
+	"github.com/appinesshq/bpi/business/data/ready"
+	"github.com/appinesshq/bpi/foundation/web"
 )
 
 type checkGroup struct {

@@ -1,12 +1,12 @@
 package loader
 
 import (
-	"github.com/dgraph-io/travel/business/data/advisory"
-	"github.com/dgraph-io/travel/business/data/place"
-	"github.com/dgraph-io/travel/business/data/weather"
-	advisoryfeed "github.com/dgraph-io/travel/business/feeds/advisory"
-	placesfeed "github.com/dgraph-io/travel/business/feeds/places"
-	weatherfeed "github.com/dgraph-io/travel/business/feeds/weather"
+	"github.com/appinesshq/bpi/business/data/advisory"
+	"github.com/appinesshq/bpi/business/data/place"
+	"github.com/appinesshq/bpi/business/data/weather"
+	advisoryfeed "github.com/appinesshq/bpi/business/feeds/advisory"
+	placesfeed "github.com/appinesshq/bpi/business/feeds/places"
+	weatherfeed "github.com/appinesshq/bpi/business/feeds/weather"
 )
 
 // marshalPlace marshals a Place value from the places package into

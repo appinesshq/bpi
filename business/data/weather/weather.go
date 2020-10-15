@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/appinesshq/bpi/business/data"
 	"github.com/ardanlabs/graphql"
-	"github.com/dgraph-io/travel/business/data"
 	"github.com/pkg/errors"
 )
 

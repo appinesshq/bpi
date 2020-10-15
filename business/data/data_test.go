@@ -9,17 +9,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/appinesshq/bpi/business/data"
+	"github.com/appinesshq/bpi/business/data/advisory"
+	"github.com/appinesshq/bpi/business/data/auth"
+	"github.com/appinesshq/bpi/business/data/city"
+	"github.com/appinesshq/bpi/business/data/place"
+	"github.com/appinesshq/bpi/business/data/ready"
+	"github.com/appinesshq/bpi/business/data/schema"
+	"github.com/appinesshq/bpi/business/data/user"
+	"github.com/appinesshq/bpi/business/data/weather"
+	"github.com/appinesshq/bpi/foundation/tests"
 	"github.com/ardanlabs/graphql"
-	"github.com/dgraph-io/travel/business/data"
-	"github.com/dgraph-io/travel/business/data/advisory"
-	"github.com/dgraph-io/travel/business/data/auth"
-	"github.com/dgraph-io/travel/business/data/city"
-	"github.com/dgraph-io/travel/business/data/place"
-	"github.com/dgraph-io/travel/business/data/ready"
-	"github.com/dgraph-io/travel/business/data/schema"
-	"github.com/dgraph-io/travel/business/data/user"
-	"github.com/dgraph-io/travel/business/data/weather"
-	"github.com/dgraph-io/travel/foundation/tests"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/crypto/bcrypt"
@@ -74,7 +74,7 @@ func waitReady(t *testing.T, ctx context.Context, testID int, tc TestConfig) *gr
 
 	gqlConfig := data.GraphQLConfig{
 		URL:            tc.url,
-		AuthHeaderName: "X-Travel-Auth",
+		AuthHeaderName: "X-Bpi-Auth",
 		AuthToken:      schema.AdminJWT,
 	}
 	gql := data.NewGraphQL(gqlConfig)
@@ -624,7 +624,7 @@ func performAuth() func(t *testing.T) {
 
 				claims := auth.Claims{
 					StandardClaims: jwt.StandardClaims{
-						Issuer:    "travel project",
+						Issuer:    "BPI", // TODO: Per site issuers
 						Subject:   "0x01",
 						Audience:  "students",
 						ExpiresAt: time.Now().Add(8760 * time.Hour).Unix(),

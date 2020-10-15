@@ -20,6 +20,12 @@
 
 # Please keep the list sorted.
 
+Arjan van Eersel <arjan@appiness.solutions>
+Vladan Lausevic <vladlau89@gmail.com>
+
+This project is derived from the dgraph travel project (https://github.com/dgraph-io/travel/), 
+so let's give their contributors the credit they deserve too:
+
 Andreas <tullo@users.noreply.github.com>
 Daniel Mai <daniel@dgraph.io>
 Karthic Rao <kartronics85@gmail.com>

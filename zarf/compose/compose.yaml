@@ -24,22 +24,22 @@ services:
       - dgraph-zero
     command: dgraph alpha --vmodule=server=3
 
-  travel-api:
-    container_name: travel-api
+  bpi-api:
+    container_name: bpi-api
     networks:
       - shared-network
-    image: travel-api-amd64:1.0
+    image: bpi-api-amd64:1.0
     ports:
       - 3000:3000 # API
       - 4000:4000 # DEBUG API
     depends_on:
       - dgraph-alpha
 
-  travel-ui:
-    container_name: travel-ui
+  bpi-ui:
+    container_name: bpi-ui
     networks:
       - shared-network
-    image: travel-ui-amd64:1.0
+    image: bpi-ui-amd64:1.0
     ports:
       - 80:80 # API
       - 4080:4080 # DEBUG API

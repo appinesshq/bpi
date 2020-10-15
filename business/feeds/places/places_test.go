@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/dgraph-io/travel/business/feeds/places"
+	"github.com/appinesshq/bpi/business/feeds/places"
 	"googlemaps.github.io/maps"
 )
 

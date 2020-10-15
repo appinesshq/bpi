@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/dgraph-io/travel/business/data"
-	"github.com/dgraph-io/travel/business/data/schema"
-	"github.com/dgraph-io/travel/business/loader"
+	"github.com/appinesshq/bpi/business/data"
+	"github.com/appinesshq/bpi/business/data/schema"
+	"github.com/appinesshq/bpi/business/loader"
 	"github.com/google/uuid"
 )
 

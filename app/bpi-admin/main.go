@@ -6,12 +6,12 @@ import (
 	"log"
 	"os"
 
+	"github.com/appinesshq/bpi/app/bpi-admin/commands"
+	"github.com/appinesshq/bpi/business/data"
+	"github.com/appinesshq/bpi/business/data/schema"
+	"github.com/appinesshq/bpi/business/data/user"
+	"github.com/appinesshq/bpi/business/loader"
 	"github.com/ardanlabs/conf"
-	"github.com/dgraph-io/travel/app/travel-admin/commands"
-	"github.com/dgraph-io/travel/business/data"
-	"github.com/dgraph-io/travel/business/data/schema"
-	"github.com/dgraph-io/travel/business/data/user"
-	"github.com/dgraph-io/travel/business/loader"
 	"github.com/pkg/errors"
 )
 
@@ -39,11 +39,11 @@ func run(log *log.Logger) error {
 		Args   conf.Args
 		Dgraph struct {
 			URL            string `conf:"default:http://0.0.0.0:8080"`
-			AuthHeaderName string `conf:"default:X-Travel-Auth"`
+			AuthHeaderName string `conf:"default:X-Bpi-Auth"`
 			AuthToken      string
 		}
 		CustomFunctions struct {
-			UploadFeedURL string `conf:"default:http://travel-api:3000/v1/feed/upload"`
+			UploadFeedURL string `conf:"default:http://bpi-api:3000/v1/feed/upload"`
 		}
 		Search struct {
 			Categories []string `conf:"default:restaurant;bar;supermarket"`
@@ -64,7 +64,7 @@ func run(log *log.Logger) error {
 	cfg.Version.SVN = build
 	cfg.Version.Desc = "copyright information here"
 
-	const prefix = "TRAVEL"
+	const prefix = "BPI"
 	if err := conf.Parse(os.Args[1:], prefix, &cfg); err != nil {
 		switch err {
 		case conf.ErrHelpWanted:

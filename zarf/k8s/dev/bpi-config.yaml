@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: travel
+  name: bpi
 data:
   dgraph_url: "http://localhost:8080"
   map_key: ""

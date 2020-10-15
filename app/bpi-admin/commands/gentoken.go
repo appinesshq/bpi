@@ -8,9 +8,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/dgraph-io/travel/business/data"
-	"github.com/dgraph-io/travel/business/data/auth"
-	"github.com/dgraph-io/travel/business/data/user"
+	"github.com/appinesshq/bpi/business/data"
+	"github.com/appinesshq/bpi/business/data/auth"
+	"github.com/appinesshq/bpi/business/data/user"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -84,7 +84,7 @@ func GenToken(log *log.Logger, gqlConfig data.GraphQLConfig, email string, priva
 	// jti (JWT ID): Unique identifier; can be used to prevent the JWT from being replayed (allows a token to be used only once)
 	claims := auth.Claims{
 		StandardClaims: jwt.StandardClaims{
-			Issuer:    "travel project",
+			Issuer:    "BPI", // TODO: Per site issuers
 			Subject:   usr.ID,
 			ExpiresAt: time.Now().Add(8760 * time.Hour).Unix(),
 			IssuedAt:  time.Now().Unix(),

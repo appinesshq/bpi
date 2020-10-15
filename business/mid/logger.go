@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dgraph-io/travel/foundation/web"
+	"github.com/appinesshq/bpi/foundation/web"
 )
 
 // Logger writes some information about the request to the logs in the

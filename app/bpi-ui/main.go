@@ -11,9 +11,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/appinesshq/bpi/app/bpi-ui/handlers"
+	"github.com/appinesshq/bpi/business/data"
 	"github.com/ardanlabs/conf"
-	"github.com/dgraph-io/travel/app/travel-ui/handlers"
-	"github.com/dgraph-io/travel/business/data"
 	"github.com/pkg/errors"
 )
 
@@ -59,7 +59,7 @@ func run(log *log.Logger) error {
 	cfg.Version.SVN = build
 	cfg.Version.Desc = "copyright information here"
 
-	const prefix = "TRAVEL"
+	const prefix = "BPI"
 	if err := conf.Parse(os.Args[1:], prefix, &cfg); err != nil {
 		switch err {
 		case conf.ErrHelpWanted:

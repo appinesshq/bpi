@@ -13,10 +13,10 @@ services:
       - DGRAPH_ALPHA_ZERO=dgraph-zero:5080
       - DGRAPH_ALPHA_WHITELIST=0.0.0.0/0
 
-  travel-api:
+  bpi-api:
     environment:
-      - TRAVEL_API_KEYS_MAPS_KEY=
+      - BPI_API_KEYS_MAPS_KEY=
 
-  travel-ui:
+  bpi-ui:
     environment:
-      - TRAVEL_API_KEYS_MAPS_KEY=
+      - BPI_API_KEYS_MAPS_KEY=

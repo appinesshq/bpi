@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/dgraph-io/travel/foundation/web"
+	"github.com/appinesshq/bpi/foundation/web"
 	"github.com/pkg/errors"
 )
 

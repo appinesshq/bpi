@@ -1,31 +1,31 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: travel
+  name: bpi
 spec:
   selector:
     matchLabels:
-      app: travel
+      app: bpi
   template:
     metadata:
       labels:
-        app: travel
+        app: bpi
     spec:
       dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       containers:
       - name: api
-        image: travel-api-amd64:1.0
+        image: bpi-api-amd64:1.0
         env:
-        - name: TRAVEL_DGRAPH_URL
+        - name: bpi_DGRAPH_URL
           valueFrom:
             configMapKeyRef:
-              name: travel
+              name: bpi
               key: dgraph_url
-        - name: TRAVEL_API_KEYS_MAPS_KEY
+        - name: bpi_API_KEYS_MAPS_KEY
           valueFrom:
             configMapKeyRef:
-              name: travel
+              name: bpi
               key: map_key
         ports:
         - name: api
@@ -39,17 +39,17 @@ spec:
           initialDelaySeconds: 30
           periodSeconds: 15
       - name: ui
-        image: travel-ui-amd64:1.0
+        image: bpi-ui-amd64:1.0
         env:
-        - name: TRAVEL_DGRAPH_URL
+        - name: bpi_DGRAPH_URL
           valueFrom:
             configMapKeyRef:
-              name: travel
+              name: bpi
               key: dgraph_url
-        - name: TRAVEL_API_KEYS_MAPS_KEY
+        - name: bpi_API_KEYS_MAPS_KEY
           valueFrom:
             configMapKeyRef:
-              name: travel
+              name: bpi
               key: map_key
         ports:
         - name: ui
@@ -66,10 +66,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: travel
+  name: bpi
 spec:
   selector:
-    service: travel
+    service: bpi
   ports:
   - name: ui
     port: 80

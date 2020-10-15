@@ -7,16 +7,16 @@ all: api ui
 
 api:
 	docker build \
-		-f zarf/docker/dockerfile.travel-api \
-		-t travel-api-amd64:1.0 \
+		-f zarf/docker/dockerfile.bpi-api \
+		-t bpi-api-amd64:1.0 \
 		--build-arg VCS_REF=`git rev-parse HEAD` \
 		--build-arg BUILD_DATE=`date -u +”%Y-%m-%dT%H:%M:%SZ”` \
 		.
 
 ui:
 	docker build \
-		-f zarf/docker/dockerfile.travel-ui \
-		-t travel-ui-amd64:1.0 \
+		-f zarf/docker/dockerfile.bpi-ui \
+		-t bpi-ui-amd64:1.0 \
 		--build-arg VCS_REF=`git rev-parse HEAD` \
 		--build-arg BUILD_DATE=`date -u +”%Y-%m-%dT%H:%M:%SZ”` \
 		.
@@ -42,44 +42,44 @@ logs:
 # Running from within k8s/dev
 
 kind-up:
-	kind create cluster --image kindest/node:v1.19.1 --name dgraph-travel-cluster --config zarf/k8s/dev/kind-config.yaml
+	kind create cluster --image kindest/node:v1.19.1 --name bpi-cluster --config zarf/k8s/dev/kind-config.yaml
 
 kind-down:
-	kind delete cluster --name dgraph-travel-cluster
+	kind delete cluster --name bpi-cluster
 
 kind-load:
-	kind load docker-image travel-api-amd64:1.0 --name dgraph-travel-cluster
-	kind load docker-image travel-ui-amd64:1.0 --name dgraph-travel-cluster
+	kind load docker-image bpi-api-amd64:1.0 --name bpi-cluster
+	kind load docker-image bpi-ui-amd64:1.0 --name bpi-cluster
 
 kind-services:
 	kustomize build zarf/k8s/dev | kubectl apply -f -
 
 kind-api: api
-	kind load docker-image travel-api-amd64:1.0 --name dgraph-travel-cluster
-	kubectl delete pods -lapp=travel
+	kind load docker-image bpi-api-amd64:1.0 --name bpi-cluster
+	kubectl delete pods -lapp=bpi
 
 kind-ui: ui
-	kind load docker-image travel-ui-amd64:1.0 --name dgraph-travel-cluster
-	kubectl delete pods -lapp=travel
+	kind load docker-image bpi-ui-amd64:1.0 --name bpi-cluster
+	kubectl delete pods -lapp=bpi
 
 kind-logs:
-	kubectl logs -lapp=travel --all-containers=true -f
+	kubectl logs -lapp=bpi --all-containers=true -f
 
 kind-status:
 	kubectl get nodes
 	kubectl get pods --watch
 
 kind-status-full:
-	kubectl describe pod -lapp=travel
+	kubectl describe pod -lapp=bpi
 
 kind-delete:
 	kustomize build . | kubectl delete -f -
 
 kind-schema:
-	go run app/travel-admin/main.go --custom-functions-upload-feed-url=http://localhost:3000/v1/feed/upload schema
+	go run app/bpi-admin/main.go --custom-functions-upload-feed-url=http://localhost:3000/v1/feed/upload schema
 
 kind-seed: kind-schema
-	go run app/travel-admin/main.go seed 
+	go run app/bpi-admin/main.go seed 
 
 # ==============================================================================
 # Running from within the local with Slash
@@ -104,8 +104,8 @@ slash-logs:
 local-run: local-up seed browse
 
 local-up:
-	go run app/travel-api/main.go &> api.log &
-	cd app/travel-ui; \
+	go run app/bpi-api/main.go &> api.log &
+	cd app/bpi-ui; \
 	go run main.go &> ../../ui.log &
 
 API := $(shell lsof -i tcp:4000 | cut -c9-13 | grep "[0-9]")
@@ -130,10 +130,10 @@ ui-logs:
 # Administration
 
 schema:
-	go run app/travel-admin/main.go schema
+	go run app/bpi-admin/main.go schema
 
 seed: schema
-	go run app/travel-admin/main.go seed
+	go run app/bpi-admin/main.go seed
 
 # Running tests within the local computer
 

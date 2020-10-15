@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/dgraph-io/travel/business/data"
-	"github.com/dgraph-io/travel/business/mid"
-	"github.com/dgraph-io/travel/foundation/web"
+	"github.com/appinesshq/bpi/business/data"
+	"github.com/appinesshq/bpi/business/mid"
+	"github.com/appinesshq/bpi/foundation/web"
 	"github.com/pkg/errors"
 )
 

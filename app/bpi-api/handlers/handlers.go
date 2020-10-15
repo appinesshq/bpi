@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/dgraph-io/travel/business/data"
-	"github.com/dgraph-io/travel/business/loader"
-	"github.com/dgraph-io/travel/business/mid"
-	"github.com/dgraph-io/travel/foundation/web"
+	"github.com/appinesshq/bpi/business/data"
+	"github.com/appinesshq/bpi/business/loader"
+	"github.com/appinesshq/bpi/business/mid"
+	"github.com/appinesshq/bpi/foundation/web"
 )
 
 // API constructs an http.Handler with all application routes defined.

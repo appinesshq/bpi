@@ -1,5 +1,5 @@
 # Build the Go Binary.
-FROM golang:1.15.2 as build_travel-api
+FROM golang:1.15.2 as build_bpi-api
 ENV CGO_ENABLED 0
 ARG VCS_REF
 
@@ -13,7 +13,7 @@ COPY . .
 
 # Build the api binary. We are doing this last since this will be different
 # every time we run through this process.
-WORKDIR /service/app/travel-api
+WORKDIR /service/app/bpi-api
 RUN go build -ldflags "-X main.build=${VCS_REF}"
 
 
@@ -21,13 +21,13 @@ RUN go build -ldflags "-X main.build=${VCS_REF}"
 FROM alpine:3.12
 ARG BUILD_DATE
 ARG VCS_REF
-COPY --from=build_travel-api /service/app/travel-api/travel-api /app/travel-api
+COPY --from=build_bpi-api /service/app/bpi-api/bpi-api /app/bpi-api
 WORKDIR /app
-CMD ["/app/travel-api"]
+CMD ["/app/bpi-api"]
 
 LABEL org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.title="travel-api" \
+      org.opencontainers.image.title="bpi-api" \
       org.opencontainers.image.authors="ArdanLabs, Dgraph" \
-      org.opencontainers.image.source="https://github.com/dgraph-io/travel/app/travel-api" \
+      org.opencontainers.image.source="https://github.com/appinesshq/bpi/app/bpi-api" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.vendor="Dgraph"

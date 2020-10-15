@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/dgraph-io/travel/business/data"
-	"github.com/dgraph-io/travel/business/data/user"
+	"github.com/appinesshq/bpi/business/data"
+	"github.com/appinesshq/bpi/business/data/user"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 )

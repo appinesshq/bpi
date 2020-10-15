@@ -2,17 +2,17 @@ version: '3.8'
 
 services:
 
-  travel-api:
+  bpi-api:
     environment:
-      - TRAVEL_API_KEYS_MAPS_KEY=
-      - TRAVEL_DGRAPH_URL=
-      - TRAVEL_DGRAPH_AUTH_HEADER_NAME=X-Auth-Token
-      - TRAVEL_DGRAPH_AUTH_TOKEN=
+      - BPI_API_KEYS_MAPS_KEY=
+      - BPI_DGRAPH_URL=
+      - BPI_DGRAPH_AUTH_HEADER_NAME=X-Auth-Token
+      - BPI_DGRAPH_AUTH_TOKEN=
 
-  travel-ui:
+  bpi-ui:
     environment:
-      - TRAVEL_API_KEYS_MAPS_KEY=
-      - TRAVEL_DGRAPH_URL=
-      - TRAVEL_DGRAPH_AUTH_HEADER_NAME=X-Auth-Token
-      - TRAVEL_DGRAPH_AUTH_TOKEN=
-      - TRAVEL_DGRAPH_BROWSER_URL=
+      - BPI_API_KEYS_MAPS_KEY=
+      - BPI_DGRAPH_URL=
+      - BPI_DGRAPH_AUTH_HEADER_NAME=X-Auth-Token
+      - BPI_DGRAPH_AUTH_TOKEN=
+      - BPI_DGRAPH_BROWSER_URL=

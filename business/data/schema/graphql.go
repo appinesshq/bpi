@@ -130,5 +130,5 @@ type Query{
 	})
 }
 
-# Dgraph.Authorization {"header":"X-Travel-Auth", "namespace":"Auth", "algo":"RS256", "verificationkey":"{{.PublicKey}}"}
+# Dgraph.Authorization {"header":"X-Bpi-Auth", "namespace":"Auth", "algo":"RS256", "verificationkey":"{{.PublicKey}}"}
 `
