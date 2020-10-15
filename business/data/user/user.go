@@ -21,13 +21,8 @@ var (
 // being added, the user with the id from the database is returned.
 func Add(ctx context.Context, gql *graphql.GraphQL, nu NewUser) (User, error) {
 	u := User{
-		SourceID:     nu.SourceID,
-		Source:       nu.Source,
-		ScreenName:   nu.ScreenName,
-		Name:         nu.Name,
-		Location:     nu.Location,
-		FriendsCount: nu.FriendsCount,
-		Friends:      nu.Friends,
+		Email:    nu.Email,
+		Password: nu.Password, // TODO: Password hashing
 	}
 
 	u, err := add(ctx, gql, u)
@@ -38,66 +33,15 @@ func Add(ctx context.Context, gql *graphql.GraphQL, nu NewUser) (User, error) {
 	return u, nil
 }
 
-// AddFriend adds a new user to the database if the user doesn't already exist.
-// Then the user is added to the collection of friends for the specified user id.
-func AddFriend(ctx context.Context, gql *graphql.GraphQL, userID string, nu NewUser) (User, error) {
-	// Validate the user doesn't already exists by screen name.
-	// Validate the user isn't already in the list of friends for userID.
-	/*
-		mutation {
-			updateUser(input: {
-				filter: {
-					id: ["0x04"]
-				},
-				set: {
-					friends: [{
-						id: "0x06"
-					}]
-				}
-			})
-			{
-				numUids
-			}
-		}
-
-		mutation {
-		updateUser(input: {
-				filter: {
-					id: ["0x04"]
-				},
-				set: {
-					friends: [{
-						source_id: "4444444444"
-						source: "source"
-						screen_name: "jacksmith"
-						name: "jack smith"
-						location: "Miami, FL"
-					}]
-				}
-			})
-			{
-				numUids
-			}
-		}
-	*/
-
-	return User{}, nil
-}
-
-// One returns the specified user from the database by the city id.
+// One returns the specified user from the database by the user id.
 func One(ctx context.Context, gql *graphql.GraphQL, userID string) (User, error) {
 	query := fmt.Sprintf(`
-query {
-	getUser(id: %q) {
-		id
-		source_id
-    	source
-		screen_name
-		name
-		location
-		friends_count
-	}
-}`, userID)
+	query {
+		getUser(id: %q) {
+			id
+			email
+		}
+	}`, userID)
 
 	var result struct {
 		GetUser User `json:"getUser"`
@@ -113,20 +57,15 @@ query {
 	return result.GetUser, nil
 }
 
-// OneByScreenName returns the specified user from the database by screen name.
-func OneByScreenName(ctx context.Context, gql *graphql.GraphQL, screenName string) (User, error) {
+// OneByEmail returns the specified user from the database by email.
+func OneByEmail(ctx context.Context, gql *graphql.GraphQL, email string) (User, error) {
 	query := fmt.Sprintf(`
 query {
-	queryUser(filter: { screen_name: { eq: %q } }) {
+	queryUser(filter: { email: { eq: %q } }) {
 		id
-		source_id
-    	source
-		screen_name
-		name
-		location
-		friends_count
+		email
 	}
-}`, screenName)
+}`, email)
 
 	var result struct {
 		QueryUser []User `json:"queryUser"`
@@ -163,16 +102,11 @@ func prepareAdd(user User) (string, addResult) {
 	mutation := fmt.Sprintf(`
 mutation {
 	addUser(input: [{
-		source_id: %q
-    	source: %q
-		screen_name: %q
-		name: %q
-		location: %q
-		friends_count: %d
+		email: %q
+		password: %q
 	}])
 	%s
-}`, user.SourceID, user.Source, user.ScreenName, user.Name,
-		user.Location, user.FriendsCount, result.document())
+}`, user.Email, user.Password, result.document())
 
 	return mutation, result
 }

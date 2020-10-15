@@ -2,25 +2,15 @@ package user
 
 // User represents someone with access to the system.
 type User struct {
-	ID           string `json:"id"`
-	SourceID     string `json:"source_id"`
-	Source       string `json:"source"`
-	ScreenName   string `json:"screen_name"`
-	Name         string `json:"name"`
-	Location     string `json:"location"`
-	FriendsCount int    `json:"friends_count"`
-	Friends      []User `json:"friends"`
+	ID       string `json:"id"`
+	Email    string `json:"email"`
+	Password string `json:"location,omitempty"`
 }
 
 // NewUser contains information needed to create a new User.
 type NewUser struct {
-	SourceID     string `json:"source_id"`
-	Source       string `json:"source"`
-	ScreenName   string `json:"screen_name"`
-	Name         string `json:"name"`
-	Location     string `json:"location"`
-	FriendsCount int    `json:"friends_count"`
-	Friends      []User `json:"friends"`
+	Email    string `json:"email"`
+	Password string `json:"location"`
 }
 
 type addResult struct {

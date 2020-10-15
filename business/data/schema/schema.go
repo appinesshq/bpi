@@ -16,13 +16,30 @@ import (
 var document = `
 type User {
 	id: ID!
-	source_id: String!
-	source: String!
+	email: String! @search(by: [exact])
+	password: String!
+	profile: Profile
+}
+
+type Profile {
+	id: ID!
+	handle: String! @search(by: [exact])
 	screen_name: String! @search(by: [exact])
+	user: User @hasInverse(field: profile)
+}
+
+type Country {
+	id: ID!
+	code: String!
 	name: String!
-	location: String
-	friends_count: Int
-	friends: [User]
+	jurisdictions: [Jurisdiction] @hasInverse(field: country)
+}
+
+type Jurisdiction {
+	id: ID!
+	code: String!
+	name: String!
+	country: Country
 }
 `
 

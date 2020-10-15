@@ -117,12 +117,8 @@ func addUser(url string) func(t *testing.T) {
 				gql := waitReady(t, ctx, testID, url)
 
 				newUser := user.NewUser{
-					SourceID:     "123456",
-					Source:       "twitter",
-					ScreenName:   "goinggodotnet",
-					Name:         "William Kennedy",
-					Location:     "Miami",
-					FriendsCount: 200,
+					Email:    "test@example.com",
+					Password: "testtest",
 				}
 
 				addedUser, err := user.Add(ctx, gql, newUser)
@@ -137,21 +133,27 @@ func addUser(url string) func(t *testing.T) {
 				}
 				t.Logf("\t%s\tTest %d:\tShould be able to query for the user by ID.", tests.Success, testID)
 
-				if diff := cmp.Diff(addedUser, retUser); diff != "" {
-					t.Fatalf("\t%s\tTest %d:\tShould get back the same user. Diff:\n%s", tests.Failed, testID, diff)
+				expected := user.User{
+					ID:       retUser.ID,
+					Email:    "test@example.com",
+					Password: "",
 				}
-				t.Logf("\t%s\tTest %d:\tShould get back the same user.", tests.Success, testID)
 
-				retUser2, err := user.OneByScreenName(ctx, gql, addedUser.ScreenName)
+				if diff := cmp.Diff(expected, retUser); diff != "" {
+					t.Fatalf("\t%s\tTest %d:\tShould get back the same user except for the password. Diff:\n%s", tests.Failed, testID, diff)
+				}
+				t.Logf("\t%s\tTest %d:\tShould get back the same user except for the password.", tests.Success, testID)
+
+				retUser2, err := user.OneByEmail(ctx, gql, addedUser.Email)
 				if err != nil {
-					t.Fatalf("\t%s\tTest %d:\tShould be able to query for the user by ScreenName: %v", tests.Failed, testID, err)
+					t.Fatalf("\t%s\tTest %d:\tShould be able to query for the user by Email: %v", tests.Failed, testID, err)
 				}
-				t.Logf("\t%s\tTest %d:\tShould be able to query for the user by ScreenName.", tests.Success, testID)
+				t.Logf("\t%s\tTest %d:\tShould be able to query for the user by Email.", tests.Success, testID)
 
-				if diff := cmp.Diff(addedUser, retUser2); diff != "" {
-					t.Fatalf("\t%s\tTest %d:\tShould get back the same user. Diff:\n%s", tests.Failed, testID, diff)
+				if diff := cmp.Diff(expected, retUser2); diff != "" {
+					t.Fatalf("\t%s\tTest %d:\tShould get back the same user except for the password. Diff:\n%s", tests.Failed, testID, diff)
 				}
-				t.Logf("\t%s\tTest %d:\tShould get back the same user.", tests.Success, testID)
+				t.Logf("\t%s\tTest %d:\tShould get back the same user except for the password.", tests.Success, testID)
 			}
 		}
 	}

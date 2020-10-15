@@ -5,24 +5,26 @@ import (
 	"log"
 	"time"
 
-	"github.com/appinesshq/bpi/business/feeds/twitter"
+	"github.com/appinesshq/bpi/business/data"
 )
 
 // Seed will seed the database for a given user.
-func Seed(log *log.Logger, token string, screenName string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+func Seed(log *log.Logger, gqlConfig data.GraphQLConfig) error {
+	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	t := twitter.New(log, token)
-	u, err := t.RetrieveUser(ctx, screenName)
-	if err != nil {
-		return err
-	}
+	// TODO: Seed db with countries and jurisdictions.
 
-	_, err = t.RetrieveFriends(ctx, u.ID)
-	if err != nil {
-		return err
-	}
+	// t := twitter.New(log, token)
+	// u, err := t.RetrieveUser(ctx, screenName)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// _, err = t.RetrieveFriends(ctx, u.ID)
+	// if err != nil {
+	// 	return err
+	// }
 
 	return nil
 }

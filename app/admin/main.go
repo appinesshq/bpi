@@ -36,13 +36,13 @@ func run(log *log.Logger) error {
 		Args   conf.Args
 		Dgraph struct {
 			URL            string `conf:"default:http://0.0.0.0:8080"`
-			AuthHeaderName string `conf:"default:X-Travel-Auth"`
+			AuthHeaderName string `conf:"default:X-Bpi-Auth"`
 			AuthToken      string
 		}
-		Twitter struct {
-			ScreenName string `conf:"default:goinggodotnet"`
-			Token      string `conf:"noprint"`
-		}
+		// Twitter struct {
+		// 	ScreenName string `conf:"default:goinggodotnet"`
+		// 	Token      string `conf:"noprint"`
+		// }
 	}
 	cfg.Version.SVN = build
 	cfg.Version.Desc = "copyright information here"
@@ -98,7 +98,7 @@ func run(log *log.Logger) error {
 		}
 
 	case "seed":
-		if err := commands.Seed(log, cfg.Twitter.Token, cfg.Twitter.ScreenName); err != nil {
+		if err := commands.Seed(log, gqlConfig); err != nil {
 			return errors.Wrap(err, "seeding database")
 		}
 
