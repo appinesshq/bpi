@@ -40,6 +40,9 @@ func One(ctx context.Context, gql *graphql.GraphQL, userID string) (User, error)
 		getUser(id: %q) {
 			id
 			email
+			profile {
+				id
+			}
 		}
 	}`, userID)
 
@@ -64,6 +67,9 @@ query {
 	queryUser(filter: { email: { eq: %q } }) {
 		id
 		email
+		profile {
+			id
+		}
 	}
 }`, email)
 

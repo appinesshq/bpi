@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/appinesshq/bpi/business/data"
+	"github.com/appinesshq/bpi/business/data/profile"
 	"github.com/appinesshq/bpi/business/data/ready"
 	"github.com/appinesshq/bpi/business/data/schema"
 	"github.com/appinesshq/bpi/business/data/user"
@@ -25,6 +26,7 @@ func TestData(t *testing.T) {
 
 	t.Run("readiness", readiness(url))
 	t.Run("user", addUser(url))
+	t.Run("user profile", addProfile(url))
 }
 
 // waitReady provides support for making sure the database is ready to be used.
@@ -154,6 +156,88 @@ func addUser(url string) func(t *testing.T) {
 					t.Fatalf("\t%s\tTest %d:\tShould get back the same user except for the password. Diff:\n%s", tests.Failed, testID, diff)
 				}
 				t.Logf("\t%s\tTest %d:\tShould get back the same user except for the password.", tests.Success, testID)
+			}
+		}
+	}
+	return tf
+}
+
+// addProfile validates a profile node can be added to the database.
+func addProfile(url string) func(t *testing.T) {
+	tf := func(t *testing.T) {
+		t.Log("Given the need to be able to validate storing a profile.")
+		{
+			testID := 0
+			t.Logf("\tTest %d:\tWhen handling a user profile.", testID)
+			{
+				ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
+				defer cancel()
+
+				gql := waitReady(t, ctx, testID, url)
+
+				// Create a user for the profile.
+				newUser := user.NewUser{
+					Email:    "testprofile@example.com",
+					Password: "testprofile",
+				}
+
+				addedUser, err := user.Add(ctx, gql, newUser)
+				if err != nil {
+					t.Fatalf("\t%s\tTest %d:\tShould be able to add a user: %v", tests.Failed, testID, err)
+				}
+				t.Logf("\t%s\tTest %d:\tShould be able to add a user.", tests.Success, testID)
+
+				// Prepare the new profile.
+				newProfile := profile.NewProfile{
+					Handle:     "testuser",
+					ScreenName: "Test User",
+					UserID:     addedUser.ID,
+				}
+
+				addedProfile, err := profile.Add(ctx, gql, newProfile)
+				if err != nil {
+					t.Fatalf("\t%s\tTest %d:\tShould be able to add a profile: %v", tests.Failed, testID, err)
+				}
+				t.Logf("\t%s\tTest %d:\tShould be able to add a profile.", tests.Success, testID)
+
+				retProfile, err := profile.One(ctx, gql, addedProfile.ID)
+				if err != nil {
+					t.Fatalf("\t%s\tTest %d:\tShould be able to query for the profile by ID: %v", tests.Failed, testID, err)
+				}
+				t.Logf("\t%s\tTest %d:\tShould be able to query for the profile by ID.", tests.Success, testID)
+
+				expected := profile.Profile{
+					ID:         addedProfile.ID,
+					Handle:     "testuser",
+					ScreenName: "Test User",
+				}
+
+				if diff := cmp.Diff(expected, retProfile); diff != "" {
+					t.Fatalf("\t%s\tTest %d:\tShould get back the same profile. Diff:\n%s", tests.Failed, testID, diff)
+				}
+				t.Logf("\t%s\tTest %d:\tShould get back the same profile.", tests.Success, testID)
+
+				retProfile2, err := profile.OneByHandle(ctx, gql, addedProfile.Handle)
+				if err != nil {
+					t.Fatalf("\t%s\tTest %d:\tShould be able to query for the profile by handle: %v", tests.Failed, testID, err)
+				}
+				t.Logf("\t%s\tTest %d:\tShould be able to query for the profile by handle.", tests.Success, testID)
+
+				if diff := cmp.Diff(expected, retProfile2); diff != "" {
+					t.Fatalf("\t%s\tTest %d:\tShould get back the same profile. Diff:\n%s", tests.Failed, testID, diff)
+				}
+				t.Logf("\t%s\tTest %d:\tShould get back the same profile.", tests.Success, testID)
+
+				retUser, err := user.One(ctx, gql, addedUser.ID)
+				if err != nil {
+					t.Fatalf("\t%s\tTest %d:\tShould be able to query for the user by ID: %v", tests.Failed, testID, err)
+				}
+				t.Logf("\t%s\tTest %d:\tShould be able to query for the user by ID.", tests.Success, testID)
+
+				if retUser.Profile.ID != retProfile.ID {
+					t.Fatalf("\t%s\tTest %d:\tShould be able get the profile ID from the user: %v", tests.Failed, testID, err)
+				}
+				t.Logf("\t%s\tTest %d:\tShould be able to get the profile ID from the user.", tests.Failed, testID)
 			}
 		}
 	}

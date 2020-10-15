@@ -24,5 +24,5 @@ seed:
 # Running tests within the local computer
 
 test:
-	go test ./... -count=1
+	go test ./... -count=1 -v
 	staticcheck ./...

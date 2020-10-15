@@ -27,21 +27,21 @@ type Profile {
 	screen_name: String! @search(by: [exact])
 	user: User @hasInverse(field: profile)
 }
-
-type Country {
-	id: ID!
-	code: String!
-	name: String!
-	jurisdictions: [Jurisdiction] @hasInverse(field: country)
-}
-
-type Jurisdiction {
-	id: ID!
-	code: String!
-	name: String!
-	country: Country
-}
 `
+
+// type Country {
+// 	id: ID!
+// 	code: String!
+// 	name: String!
+// 	jurisdictions: [Jurisdiction] @hasInverse(field: country)
+// }
+
+// type Jurisdiction {
+// 	id: ID!
+// 	code: String!
+// 	name: String!
+// 	country: Country
+// }
 
 // Schema error variables.
 var (
