@@ -32,8 +32,8 @@ jobs:
           name: Run tests
           command: |
               go test ./...
-      - notify:
-          webhooks:
-            # A list of hook hashes, containing the url field
-            # gitter hook
-            - url: https://webhooks.gitter.im/e/e91f84212ec665879dca
+  notify:
+    webhooks:
+      # A list of hook hashes, containing the url field
+      # gitter hook
+      - url: https://webhooks.gitter.im/e/e91f84212ec665879dca
