@@ -1,4 +1,4 @@
-module github.com/ardanlabs/dgraph
+module github.com/appinesshq/bpi
 
 go 1.14
 

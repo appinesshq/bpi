@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/ardanlabs/dgraph/business/feeds/twitter"
+	"github.com/appinesshq/bpi/business/feeds/twitter"
 )
 
 // Seed will seed the database for a given user.

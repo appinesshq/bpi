@@ -6,9 +6,9 @@ import (
 	"log"
 	"os"
 
+	"github.com/appinesshq/bpi/app/admin/commands"
+	"github.com/appinesshq/bpi/business/data"
 	"github.com/ardanlabs/conf"
-	"github.com/ardanlabs/dgraph/app/admin/commands"
-	"github.com/ardanlabs/dgraph/business/data"
 	"github.com/pkg/errors"
 )
 

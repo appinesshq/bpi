@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ardanlabs/dgraph/business/data"
-	"github.com/ardanlabs/dgraph/business/data/ready"
-	"github.com/ardanlabs/dgraph/business/data/schema"
-	"github.com/ardanlabs/dgraph/business/data/user"
-	"github.com/ardanlabs/dgraph/foundation/tests"
+	"github.com/appinesshq/bpi/business/data"
+	"github.com/appinesshq/bpi/business/data/ready"
+	"github.com/appinesshq/bpi/business/data/schema"
+	"github.com/appinesshq/bpi/business/data/user"
+	"github.com/appinesshq/bpi/foundation/tests"
 	"github.com/ardanlabs/graphql"
 	"github.com/google/go-cmp/cmp"
 )

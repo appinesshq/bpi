@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ardanlabs/dgraph/business/data"
-	"github.com/ardanlabs/dgraph/business/data/schema"
+	"github.com/appinesshq/bpi/business/data"
+	"github.com/appinesshq/bpi/business/data/schema"
 )
 
 // Schema handles the updating of the schema.
