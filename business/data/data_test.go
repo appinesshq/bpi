@@ -38,11 +38,16 @@ func waitReady(t *testing.T, ctx context.Context, testID int, url string) *graph
 	t.Logf("\t%s\tTest %d:\tShould be able to to see Dgraph is ready.", tests.Success, testID)
 
 	gqlConfig := data.GraphQLConfig{
-		URL: url,
+		URL:            url,
+		AuthHeaderName: "X-Bpi-Auth",
+		AuthToken:      schema.AdminJWT,
 	}
 	gql := data.NewGraphQL(gqlConfig)
 
-	schema := schema.New(gql)
+	schema, err := schema.New(gql)
+	if err != nil {
+		t.Fatalf("\t%s\tTest %d:\tShould be able to prepare the schema: %v.", tests.Failed, testID, err)
+	}
 	t.Logf("\t%s\tTest %d:\tShould be able to prepare the schema.", tests.Success, testID)
 
 	if err := schema.Create(ctx); err != nil {
