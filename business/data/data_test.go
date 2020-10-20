@@ -167,6 +167,12 @@ func addUser(url string) func(t *testing.T) {
 					t.Fatalf("\t%s\tTest %d:\tShould get back the same user except for the password. Diff:\n%s", tests.Failed, testID, diff)
 				}
 				t.Logf("\t%s\tTest %d:\tShould get back the same user except for the password.", tests.Success, testID)
+
+				_, err = user.Authenticate(ctx, gql, newUser.Email, newUser.Password, now)
+				if err != nil {
+					t.Fatalf("\t%s\tTest %d:\tShould be able to authenticate: %v", tests.Failed, testID, err)
+				}
+				t.Logf("\t%s\tTest %d:\tShould be able to authenticate.", tests.Success, testID)
 			}
 		}
 	}

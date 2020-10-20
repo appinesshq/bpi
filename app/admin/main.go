@@ -108,8 +108,24 @@ func run(log *log.Logger) error {
 			return errors.Wrap(err, "seeding database")
 		}
 
+	case "keygen":
+		if err := commands.KeyGen(); err != nil {
+			return errors.Wrap(err, "generating keys")
+		}
+
+	case "gentoken":
+		email := cfg.Args.Num(1)
+		privateKeyFile := cfg.Args.Num(2)
+		algorithm := cfg.Args.Num(3)
+		if err := commands.GenToken(gqlConfig, email, privateKeyFile, algorithm); err != nil {
+			return errors.Wrap(err, "generating token")
+		}
+
 	default:
 		fmt.Println("schema: update the schema in the database")
+		fmt.Println("keygen: generate a set of private/public key files")
+		fmt.Println("gentoken: generate a JWT for a user with claims")
+		fmt.Println("provide a command to get more help.")
 		return commands.ErrHelp
 	}
 

@@ -33,15 +33,26 @@ type Claims struct {
 	Auth StandardClaims
 }
 
-// Authorized returns true if the claim matches the provided role.
-func (c Claims) Authorized(role string) bool {
-	return c.Auth.Role == role
+// Valid is called during the parsing of a token.
+func (c Claims) Valid() error {
+	if err := c.StandardClaims.Valid(); err != nil {
+		return errors.Wrap(err, "validating standard claims")
+	}
+
+	return nil
 }
 
-// Keys represents an in memory store of keys.
-type Keys map[string]*rsa.PrivateKey
+// HasRole returns true if the claims has at least one of the provided roles.
+func (c Claims) HasRole(roles ...string) bool {
+	for _, want := range roles {
+		if want == c.Auth.Role {
+			return true
+		}
+	}
+	return false
+}
 
-// PublicKeyLookup defines the signature of a function to lookup public keys.
+// KeyLookupFunc defines the signature of a function to lookup public keys.
 //
 // In a production system, a key id (KID) is used to retrieve the correct
 // public key to parse a JWT for auth and claims. A key lookup function is
@@ -55,33 +66,35 @@ type Keys map[string]*rsa.PrivateKey
 //
 // * KID to public key resolution is usually accomplished via a public JWKS
 // endpoint. See https://auth0.com/docs/jwks for more details.
-type PublicKeyLookup func(kid string) (*rsa.PublicKey, error)
+type KeyLookupFunc func(publicKID string) (*rsa.PublicKey, error)
 
 // Auth is used to authenticate clients. It can generate a token for a
 // set of user claims and recreate the claims by parsing the token.
 type Auth struct {
-	algorithm string
-	keyFunc   func(t *jwt.Token) (interface{}, error)
-	parser    *jwt.Parser
-	keys      Keys
+	privateKey       *rsa.PrivateKey
+	publicKID        string
+	algorithm        string
+	pubKeyLookupFunc KeyLookupFunc
+	parser           *jwt.Parser
 }
 
-// New creates an *Authenticator for use.
-func New(algorithm string, lookup PublicKeyLookup, keys Keys) (*Auth, error) {
+// New creates an *Authenticator for use. It will error if:
+// - The private key is nil.
+// - The public key ID is empty.
+// - The specified algorithm is unsupported.
+// - The public key function is nil.
+func New(privateKey *rsa.PrivateKey, publicKID, algorithm string, publicKeyLookupFunc KeyLookupFunc) (*Auth, error) {
+	if privateKey == nil {
+		return nil, errors.New("private key cannot be nil")
+	}
+	if publicKID == "" {
+		return nil, errors.New("public kid cannot be blank")
+	}
 	if jwt.GetSigningMethod(algorithm) == nil {
 		return nil, errors.Errorf("unknown algorithm %v", algorithm)
 	}
-
-	keyFunc := func(t *jwt.Token) (interface{}, error) {
-		kid, ok := t.Header["kid"]
-		if !ok {
-			return nil, errors.New("missing key id (kid) in token header")
-		}
-		kidID, ok := kid.(string)
-		if !ok {
-			return nil, errors.New("user token key id (kid) must be string")
-		}
-		return lookup(kidID)
+	if publicKeyLookupFunc == nil {
+		return nil, errors.New("public key function cannot be nil")
 	}
 
 	// Create the token parser to use. The algorithm used to sign the JWT must be
@@ -92,38 +105,24 @@ func New(algorithm string, lookup PublicKeyLookup, keys Keys) (*Auth, error) {
 	}
 
 	a := Auth{
-		algorithm: algorithm,
-		keyFunc:   keyFunc,
-		parser:    &parser,
-		keys:      keys,
+		privateKey:       privateKey,
+		publicKID:        publicKID,
+		algorithm:        algorithm,
+		pubKeyLookupFunc: publicKeyLookupFunc,
+		parser:           &parser,
 	}
 
 	return &a, nil
 }
 
-// AddKey adds a private key and combination kid id to our local store.
-func (a *Auth) AddKey(privateKey *rsa.PrivateKey, kid string) {
-	a.keys[kid] = privateKey
-}
-
-// RemoveKey removes a private key and combination kid id to our local store.
-func (a *Auth) RemoveKey(kid string) {
-	delete(a.keys, kid)
-}
-
 // GenerateToken generates a signed JWT token string representing the user Claims.
-func (a *Auth) GenerateToken(kid string, claims Claims) (string, error) {
+func (a *Auth) GenerateToken(claims Claims) (string, error) {
 	method := jwt.GetSigningMethod(a.algorithm)
 
-	token := jwt.NewWithClaims(method, claims)
-	token.Header["kid"] = kid
+	tkn := jwt.NewWithClaims(method, claims)
+	tkn.Header["kid"] = a.publicKID
 
-	privateKey, ok := a.keys[kid]
-	if !ok {
-		return "", errors.New("kid lookup failed")
-	}
-
-	str, err := token.SignedString(privateKey)
+	str, err := tkn.SignedString(a.privateKey)
 	if err != nil {
 		return "", errors.Wrap(err, "signing token")
 	}
@@ -134,8 +133,24 @@ func (a *Auth) GenerateToken(kid string, claims Claims) (string, error) {
 // ValidateToken recreates the Claims that were used to generate a token. It
 // verifies that the token was signed using our key.
 func (a *Auth) ValidateToken(tokenStr string) (Claims, error) {
+
+	// keyFunc is a function that returns the public key for validating a token.
+	// We use the parsed (but unverified) token to find the key id. That ID is
+	// passed to our KeyFunc to find the public key to use for verification.
+	keyFunc := func(t *jwt.Token) (interface{}, error) {
+		kid, ok := t.Header["kid"]
+		if !ok {
+			return nil, errors.New("missing key id (kid) in token header")
+		}
+		userKID, ok := kid.(string)
+		if !ok {
+			return nil, errors.New("user token key id (kid) must be string")
+		}
+		return a.pubKeyLookupFunc(userKID)
+	}
+
 	var claims Claims
-	token, err := a.parser.ParseWithClaims(tokenStr, &claims, a.keyFunc)
+	token, err := a.parser.ParseWithClaims(tokenStr, &claims, keyFunc)
 	if err != nil {
 		return Claims{}, errors.Wrap(err, "parsing token")
 	}
