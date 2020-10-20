@@ -19,6 +19,8 @@ type User {
 	email: String! @search(by: [exact])
 	password: String!
 	profile: Profile
+	date_created: DateTime!
+	date_modified: DateTime!
 }
 
 type Profile {

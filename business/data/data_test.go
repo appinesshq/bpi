@@ -123,7 +123,9 @@ func addUser(url string) func(t *testing.T) {
 					Password: "testtest",
 				}
 
-				addedUser, err := user.Add(ctx, gql, newUser)
+				now := time.Date(2020, time.June, 1, 0, 0, 0, 0, time.UTC)
+
+				addedUser, err := user.Add(ctx, gql, newUser, now)
 				if err != nil {
 					t.Fatalf("\t%s\tTest %d:\tShould be able to add a user: %v", tests.Failed, testID, err)
 				}
@@ -136,9 +138,11 @@ func addUser(url string) func(t *testing.T) {
 				t.Logf("\t%s\tTest %d:\tShould be able to query for the user by ID.", tests.Success, testID)
 
 				expected := user.User{
-					ID:       retUser.ID,
-					Email:    "test@example.com",
-					Password: "",
+					ID:           retUser.ID,
+					Email:        "bcfa60190be8bb94974b2b9ebf3bfd4db001d42c1746b18c0e280da5f09f6bcb",
+					Password:     "",
+					DateCreated:  now,
+					DateModified: now,
 				}
 
 				if diff := cmp.Diff(expected, retUser); diff != "" {
@@ -146,7 +150,7 @@ func addUser(url string) func(t *testing.T) {
 				}
 				t.Logf("\t%s\tTest %d:\tShould get back the same user except for the password.", tests.Success, testID)
 
-				retUser2, err := user.OneByEmail(ctx, gql, addedUser.Email)
+				retUser2, err := user.OneByEmail(ctx, gql, newUser.Email)
 				if err != nil {
 					t.Fatalf("\t%s\tTest %d:\tShould be able to query for the user by Email: %v", tests.Failed, testID, err)
 				}
@@ -181,7 +185,9 @@ func addProfile(url string) func(t *testing.T) {
 					Password: "testprofile",
 				}
 
-				addedUser, err := user.Add(ctx, gql, newUser)
+				now := time.Date(2020, time.June, 1, 0, 0, 0, 0, time.UTC)
+
+				addedUser, err := user.Add(ctx, gql, newUser, now)
 				if err != nil {
 					t.Fatalf("\t%s\tTest %d:\tShould be able to add a user: %v", tests.Failed, testID, err)
 				}
@@ -237,7 +243,7 @@ func addProfile(url string) func(t *testing.T) {
 				if retUser.Profile.ID != retProfile.ID {
 					t.Fatalf("\t%s\tTest %d:\tShould be able get the profile ID from the user: %v", tests.Failed, testID, err)
 				}
-				t.Logf("\t%s\tTest %d:\tShould be able to get the profile ID from the user.", tests.Failed, testID)
+				t.Logf("\t%s\tTest %d:\tShould be able to get the profile ID from the user.", tests.Success, testID)
 			}
 		}
 	}
