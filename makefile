@@ -29,6 +29,10 @@ keys:
 token:
 	go run app/admin/main.go gentoken $(ARGS)
 
+user:
+	go run app/admin/main.go adduser $(ARGS)
+
+
 # Modules support
 
 deps-reset:
