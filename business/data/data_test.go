@@ -121,6 +121,7 @@ func addUser(url string) func(t *testing.T) {
 				newUser := user.NewUser{
 					Email:    "test@example.com",
 					Password: "testtest",
+					Role:     "ADMIN",
 				}
 
 				now := time.Date(2020, time.June, 1, 0, 0, 0, 0, time.UTC)
@@ -141,6 +142,7 @@ func addUser(url string) func(t *testing.T) {
 					ID:           retUser.ID,
 					Email:        "bcfa60190be8bb94974b2b9ebf3bfd4db001d42c1746b18c0e280da5f09f6bcb",
 					Password:     "",
+					Role:         "ADMIN",
 					DateCreated:  now,
 					DateModified: now,
 				}
@@ -183,6 +185,7 @@ func addProfile(url string) func(t *testing.T) {
 				newUser := user.NewUser{
 					Email:    "testprofile@example.com",
 					Password: "testprofile",
+					Role:     "ADMIN",
 				}
 
 				now := time.Date(2020, time.June, 1, 0, 0, 0, 0, time.UTC)

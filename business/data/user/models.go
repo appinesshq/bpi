@@ -7,6 +7,7 @@ type User struct {
 	ID           string    `json:"id"`
 	Email        string    `json:"email"`
 	Password     string    `json:"password,omitempty"`
+	Role         string    `json:"role"`
 	Profile      Profile   `json:"profile,omitempty"`
 	DateCreated  time.Time `json:"date_created"`
 	DateModified time.Time `json:"date_modified"`
@@ -19,8 +20,10 @@ type Profile struct {
 
 // NewUser contains information needed to create a new User.
 type NewUser struct {
-	Email    string `json:"email"`
-	Password string `json:"location"`
+	Email           string `json:"email"`
+	Password        string `json:"password"`
+	PasswordConfirm string `json:"password_confirm"`
+	Role            string `json:"role"`
 }
 
 type addResult struct {

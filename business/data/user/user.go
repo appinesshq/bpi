@@ -43,6 +43,7 @@ func Add(ctx context.Context, gql *graphql.GraphQL, nu NewUser, now time.Time) (
 	u := User{
 		Email:        hash(EmailSalt + nu.Email),
 		Password:     string(pwdHash),
+		Role:         nu.Role,
 		DateCreated:  now,
 		DateModified: now,
 	}
@@ -62,6 +63,7 @@ func One(ctx context.Context, gql *graphql.GraphQL, userID string) (User, error)
 		getUser(id: %q) {
 			id
 			email
+			role
 			profile {
 				id
 			}
@@ -91,6 +93,7 @@ query {
 	queryUser(filter: { email: { eq: %q } }) {
 		id
 		email
+		role
 		profile {
 			id
 		}
@@ -136,12 +139,14 @@ mutation {
 	addUser(input: [{
 		email: %q
 		password: %q
+		role: %s
 		date_created: %q
 		date_modified: %q
 	}])
 	%s
 }`, user.Email,
 		user.Password,
+		user.Role,
 		user.DateCreated.UTC().Format(time.RFC3339),
 		user.DateModified.UTC().Format(time.RFC3339),
 		result.document())

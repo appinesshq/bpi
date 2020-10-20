@@ -14,10 +14,18 @@ import (
 
 // document represents the schema for the project.
 var document = `
+enum Role {
+	ADMIN
+	EMAIL
+	MUTATE
+	QUERY
+}
+
 type User {
 	id: ID!
 	email: String! @search(by: [exact])
 	password: String!
+	role: Role!
 	profile: Profile
 	date_created: DateTime!
 	date_modified: DateTime!
