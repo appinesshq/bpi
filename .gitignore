@@ -1,11 +1,7 @@
-# binaries
+# Binaries
 app/bpi-admin/bpi-admin
 app/bpi-api/bpi-api
-app/bpi-ui/bpi-ui
-
-# keys
-.keys
-.slash
+app/sidecar/metrics/metrics
 
 # Mac
 .DS_Store

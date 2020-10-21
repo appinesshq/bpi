@@ -1,155 +1,297 @@
-// Package user provides CRUD access to the database.
+// Package user contains user related CRUD functionality.
 package user
 
 import (
 	"context"
-	"crypto/sha256"
-	"fmt"
+	"database/sql"
+	"log"
 	"time"
 
-	"github.com/appinesshq/bpi/business/data/auth"
-	"github.com/ardanlabs/graphql"
+	"github.com/appinesshq/bpi/business/auth"
+	"github.com/appinesshq/bpi/foundation/database"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/otel/api/trace"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Set of error variables for CRUD operations.
 var (
-	ErrNotExists = errors.New("user does not exist")
-	ErrExists    = errors.New("user exists")
-	ErrNotFound  = errors.New("user not found")
+	// ErrNotFound is used when a specific User is requested but does not exist.
+	ErrNotFound = errors.New("not found")
+
+	// ErrInvalidID occurs when an ID is not in a valid form.
+	ErrInvalidID = errors.New("ID is not in its proper form")
 
 	// ErrAuthenticationFailure occurs when a user attempts to authenticate but
 	// anything goes wrong.
 	ErrAuthenticationFailure = errors.New("authentication failed")
+
+	// ErrForbidden occurs when a user tries to do something that is forbidden to them according to our access control policies.
+	ErrForbidden = errors.New("attempted action is not allowed")
 )
 
-var (
-	ClaimsIssuer = "MB Appiness Solutions"
-	PasswordSalt = "kdlfwreoijg9843jht98J*JT($JTJrgOHIGH(*YTOghhEht(*HT89hYG(*HG9OIUg4h984H(*hp*Hghirhghwgrgiusrhiugb5486TEFgrj9ugjwfe4w4eyrg243"
-	EmailSalt    = "qwyrgyyHGRIUHGU4TRIT5IUYu4tui8rgoireugojgireg05y095y09i5iuh9i9itehitreytijgaejhtbbvnv,nzxbvlkgnlkMRGLKMHPOHIYEHJIbfnDfkjsfd7"
-)
-
-func hash(s string) string {
-	h := sha256.New()
-	h.Write([]byte(s))
-	return fmt.Sprintf("%x", h.Sum(nil))
+// User manages the set of API's for user access.
+type User struct {
+	log *log.Logger
+	db  *sqlx.DB
 }
 
-// Add adds a new user to the database. If the user already exists
-// this function will fail but the found user is returned. If the user is
-// being added, the user with the id from the database is returned.
-func Add(ctx context.Context, gql *graphql.GraphQL, nu NewUser, now time.Time) (User, error) {
-	pwdHash, err := bcrypt.GenerateFromPassword([]byte(PasswordSalt+nu.Password), bcrypt.DefaultCost)
+// New constructs a User for api access.
+func New(log *log.Logger, db *sqlx.DB) User {
+	return User{
+		log: log,
+		db:  db,
+	}
+}
+
+// Create inserts a new user into the database.
+func (u User) Create(ctx context.Context, traceID string, nu NewUser, now time.Time) (Info, error) {
+	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "internal.data.user.create")
+	defer span.End()
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(nu.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return User{}, errors.Wrap(err, "hashing password")
+		return Info{}, errors.Wrap(err, "generating password hash")
 	}
 
-	// Prepare the new user. The email address is SHA256 hashed for GDPR compliance.
-	u := User{
-		Email:        hash(EmailSalt + nu.Email),
-		Password:     string(pwdHash),
-		Role:         nu.Role,
-		DateCreated:  now,
-		DateModified: now,
+	usr := Info{
+		ID:           uuid.New().String(),
+		Name:         nu.Name,
+		Email:        nu.Email,
+		PasswordHash: hash,
+		Roles:        nu.Roles,
+		DateCreated:  now.UTC(),
+		DateUpdated:  now.UTC(),
 	}
 
-	u, err = add(ctx, gql, u)
+	const q = `
+	INSERT INTO users
+		(user_id, name, email, password_hash, roles, date_created, date_updated)
+	VALUES
+		($1, $2, $3, $4, $5, $6, $7)`
+
+	u.log.Printf("%s: %s: %s", traceID, "user.Create",
+		database.Log(q, usr.ID, usr.Name, usr.Email, usr.PasswordHash, usr.Roles, usr.DateCreated, usr.DateUpdated),
+	)
+
+	if _, err = u.db.ExecContext(ctx, q, usr.ID, usr.Name, usr.Email, usr.PasswordHash, usr.Roles, usr.DateCreated, usr.DateUpdated); err != nil {
+		return Info{}, errors.Wrap(err, "inserting user")
+	}
+
+	return usr, nil
+}
+
+// Update replaces a user document in the database.
+func (u User) Update(ctx context.Context, traceID string, claims auth.Claims, userID string, uu UpdateUser, now time.Time) error {
+	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.user.update")
+	defer span.End()
+
+	usr, err := u.QueryByID(ctx, traceID, claims, userID)
 	if err != nil {
-		return User{}, errors.Wrap(err, "adding user to database")
+		return err
 	}
 
-	return u, nil
-}
-
-// One returns the specified user from the database by the user id.
-func One(ctx context.Context, gql *graphql.GraphQL, userID string) (User, error) {
-	query := fmt.Sprintf(`
-	query {
-		getUser(id: %q) {
-			id
-			email
-			role
-			profile {
-				id
-			}
-			date_created
-			date_modified
+	if uu.Name != nil {
+		usr.Name = *uu.Name
+	}
+	if uu.Email != nil {
+		usr.Email = *uu.Email
+	}
+	if uu.Roles != nil {
+		usr.Roles = uu.Roles
+	}
+	if uu.Password != nil {
+		pw, err := bcrypt.GenerateFromPassword([]byte(*uu.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return errors.Wrap(err, "generating password hash")
 		}
-	}`, userID)
-
-	var result struct {
-		GetUser User `json:"getUser"`
+		usr.PasswordHash = pw
 	}
-	if err := gql.Query(ctx, query, &result); err != nil {
-		return User{}, errors.Wrap(err, "query failed")
+	usr.DateUpdated = now
+
+	const q = `
+	UPDATE
+		users
+	SET 
+		"name" = $2,
+		"email" = $3,
+		"roles" = $4,
+		"password_hash" = $5,
+		"date_updated" = $6
+	WHERE
+		user_id = $1`
+
+	u.log.Printf("%s: %s: %s", traceID, "user.Update",
+		database.Log(q, usr.ID, usr.Name, usr.Email, usr.Roles, usr.PasswordHash, usr.DateCreated, usr.DateUpdated),
+	)
+
+	if _, err = u.db.ExecContext(ctx, q, userID, usr.Name, usr.Email, usr.Roles, usr.PasswordHash, usr.DateUpdated); err != nil {
+		return errors.Wrap(err, "updating user")
 	}
 
-	if result.GetUser.ID == "" {
-		return User{}, ErrNotFound
-	}
-
-	return result.GetUser, nil
+	return nil
 }
 
-// OneByEmail returns the specified user from the database by email.
-func OneByEmail(ctx context.Context, gql *graphql.GraphQL, email string) (User, error) {
-	query := fmt.Sprintf(`
-query {
-	queryUser(filter: { email: { eq: %q } }) {
-		id
-		email
-		role
-		profile {
-			id
+// Delete removes a user from the database.
+func (u User) Delete(ctx context.Context, traceID string, userID string) error {
+	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.user.delete")
+	defer span.End()
+
+	if _, err := uuid.Parse(userID); err != nil {
+		return ErrInvalidID
+	}
+
+	const q = `
+	DELETE FROM
+		users
+	WHERE
+		user_id = $1`
+
+	u.log.Printf("%s: %s: %s", traceID, "user.Delete",
+		database.Log(q, userID),
+	)
+
+	if _, err := u.db.ExecContext(ctx, q, userID); err != nil {
+		return errors.Wrapf(err, "deleting user %s", userID)
+	}
+
+	return nil
+}
+
+// Query retrieves a list of existing users from the database.
+func (u User) Query(ctx context.Context, traceID string, pageNumber int, rowsPerPage int) ([]Info, error) {
+	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.user.query")
+	defer span.End()
+
+	const q = `
+	SELECT
+		*
+	FROM
+		users
+	ORDER BY
+		user_id
+	OFFSET $1 ROWS FETCH NEXT $2 ROWS ONLY`
+
+	offset := (pageNumber - 1) * rowsPerPage
+
+	u.log.Printf("%s: %s: %s", traceID, "user.Query",
+		database.Log(q, offset, rowsPerPage),
+	)
+
+	users := []Info{}
+	if err := u.db.SelectContext(ctx, &users, q, offset, rowsPerPage); err != nil {
+		return nil, errors.Wrap(err, "selecting users")
+	}
+
+	return users, nil
+}
+
+// QueryByID gets the specified user from the database.
+func (u User) QueryByID(ctx context.Context, traceID string, claims auth.Claims, userID string) (Info, error) {
+	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.user.querybyid")
+	defer span.End()
+
+	if _, err := uuid.Parse(userID); err != nil {
+		return Info{}, ErrInvalidID
+	}
+
+	// If you are not an admin and looking to retrieve someone other than yourself.
+	if !claims.Authorized(auth.RoleAdmin) && claims.Subject != userID {
+		return Info{}, ErrForbidden
+	}
+
+	const q = `
+	SELECT
+		*
+	FROM
+		users
+	WHERE 
+		user_id = $1`
+
+	u.log.Printf("%s: %s: %s", traceID, "user.QueryByID",
+		database.Log(q, userID),
+	)
+
+	var usr Info
+	if err := u.db.GetContext(ctx, &usr, q, userID); err != nil {
+		if err == sql.ErrNoRows {
+			return Info{}, ErrNotFound
 		}
-		date_created
-		date_modified
-	}
-}`, hash(EmailSalt+email))
-
-	var result struct {
-		QueryUser []User `json:"queryUser"`
-	}
-	if err := gql.Query(ctx, query, &result); err != nil {
-		return User{}, errors.Wrap(err, "query failed")
+		return Info{}, errors.Wrapf(err, "selecting user %q", userID)
 	}
 
-	if len(result.QueryUser) != 1 {
-		return User{}, ErrNotFound
-	}
-
-	return result.QueryUser[0], nil
+	return usr, nil
 }
 
-func Authenticate(ctx context.Context, gql *graphql.GraphQL, email string, password string, now time.Time) (auth.Claims, error) {
-	query := fmt.Sprintf(`
-		query {
-			queryUser(filter: { email: { eq: %q } }) {
-				id
-				password
-				role
-			}
-		}`, hash(EmailSalt+email))
+// QueryByEmail gets the specified user from the database by email.
+func (u User) QueryByEmail(ctx context.Context, traceID string, claims auth.Claims, email string) (Info, error) {
+	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.user.querybyemail")
+	defer span.End()
 
-	var result struct {
-		QueryUser []User `json:"queryUser"`
+	const q = `
+	SELECT
+		*
+	FROM
+		users
+	WHERE
+		email = $1`
+
+	u.log.Printf("%s: %s: %s", traceID, "user.QueryByEmail",
+		database.Log(q, email),
+	)
+
+	var usr Info
+	if err := u.db.GetContext(ctx, &usr, q, email); err != nil {
+		if err == sql.ErrNoRows {
+			return Info{}, ErrNotFound
+		}
+		return Info{}, errors.Wrapf(err, "selecting user %q", email)
 	}
-	if err := gql.Query(ctx, query, &result); err != nil {
-		return auth.Claims{}, errors.Wrap(err, "query failed")
+
+	// If you are not an admin and looking to retrieve someone other than yourself.
+	if !claims.Authorized(auth.RoleAdmin) && claims.Subject != usr.ID {
+		return Info{}, ErrForbidden
 	}
 
-	if len(result.QueryUser) != 1 {
-		return auth.Claims{}, ErrNotFound
+	return usr, nil
+}
+
+// Authenticate finds a user by their email and verifies their password. On
+// success it returns a Claims Info representing this user. The claims can be
+// used to generate a token for future authentication.
+func (u User) Authenticate(ctx context.Context, traceID string, now time.Time, email, password string) (auth.Claims, error) {
+	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.user.authenticate")
+	defer span.End()
+
+	const q = `
+	SELECT
+		*
+	FROM
+		users
+	WHERE
+		email = $1`
+
+	u.log.Printf("%s: %s: %s", traceID, "user.Authenticate",
+		database.Log(q, email),
+	)
+
+	var usr Info
+	if err := u.db.GetContext(ctx, &usr, q, email); err != nil {
+
+		// Normally we would return ErrNotFound in this scenario but we do not want
+		// to leak to an unauthenticated user which emails are in the system.
+		if err == sql.ErrNoRows {
+			return auth.Claims{}, ErrAuthenticationFailure
+		}
+
+		return auth.Claims{}, errors.Wrap(err, "selecting single user")
 	}
 
-	u := result.QueryUser[0]
-
-	fmt.Println("**********************************************************", u.Password)
 	// Compare the provided password with the saved hash. Use the bcrypt
 	// comparison function so it is cryptographically secure.
-	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(PasswordSalt+password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword(usr.PasswordHash, []byte(password)); err != nil {
 		return auth.Claims{}, ErrAuthenticationFailure
 	}
 
@@ -157,133 +299,14 @@ func Authenticate(ctx context.Context, gql *graphql.GraphQL, email string, passw
 	// and generate their token.
 	claims := auth.Claims{
 		StandardClaims: jwt.StandardClaims{
-			Issuer:    ClaimsIssuer,
-			Subject:   u.ID,
-			Audience:  "users",
+			Issuer:    "service project",
+			Subject:   usr.ID,
+			Audience:  "students",
 			ExpiresAt: now.Add(time.Hour).Unix(),
 			IssuedAt:  now.Unix(),
 		},
-		Auth: auth.StandardClaims{
-			Role: u.Role,
-		},
+		Roles: usr.Roles,
 	}
 
 	return claims, nil
 }
-
-// =============================================================================
-
-func add(ctx context.Context, gql *graphql.GraphQL, user User) (User, error) {
-	mutation, result := prepareAdd(user)
-	if err := gql.Query(ctx, mutation, &result); err != nil {
-		return User{}, errors.Wrap(err, "failed to add user")
-	}
-
-	if len(result.AddUser.User) != 1 {
-		return User{}, errors.New("user id not returned")
-	}
-
-	user.ID = result.AddUser.User[0].ID
-	return user, nil
-}
-
-func prepareAdd(user User) (string, addResult) {
-	var result addResult
-	mutation := fmt.Sprintf(`
-mutation {
-	addUser(input: [{
-		email: %q
-		password: %q
-		role: %s
-		date_created: %q
-		date_modified: %q
-	}])
-	%s
-}`, user.Email,
-		user.Password,
-		user.Role,
-		user.DateCreated.UTC().Format(time.RFC3339),
-		user.DateModified.UTC().Format(time.RFC3339),
-		result.document())
-
-	return mutation, result
-}
-
-/*
-mutation {
-	addUser(input: [{
-		source_id: "1111111111"
-    	source: "source"
-		screen_name: "goinggodotnet"
-		name: "bill kennedy"
-		location: "Miami, FL"
-	}])
-	{
-		user {
-			id
-		}
-	}
-}
-
-mutation {
-	updateUser(input: {
-		filter: {
-			id: ["0x04"]
-		},
-		set: {
-			friends: [{
-				id: "0x06"
-			}]
-		}
-	})
-	{
-		numUids
-	}
-}
-
-mutation {
-  updateUser(input: {
-		filter: {
-    		id: ["0x04"]
-    	},
-    	set: {
-			friends: [{
-				source_id: "4444444444"
-				source: "source"
-				screen_name: "jacksmith"
-				name: "jack smith"
-				location: "Miami, FL"
-			}]
-    	}
-  	})
-	{
-    	numUids
-  	}
-}
-
-query {
-	queryUser(filter: { screen_name: { eq: "goinggodotnet" } })
-	{
-		id
-		source_id
-		source
-		screen_name
-		name
-		location
-		friends_count
-  	}
-}
-
-query {
-	getUser(id: "0x3")
-	{
-		id
-		source_id
-		source
-		screen_name
-		name
-		location
-		friends_count
-	}
-}
-*/
