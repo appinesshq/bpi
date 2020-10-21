@@ -19,6 +19,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var Issuer = "MB Appiness Solutions"
+
 var (
 	// ErrNotFound is used when a specific User is requested but does not exist.
 	ErrNotFound = errors.New("not found")
@@ -313,9 +315,9 @@ func (u User) Authenticate(ctx context.Context, traceID string, now time.Time, e
 	// and generate their token.
 	claims := auth.Claims{
 		StandardClaims: jwt.StandardClaims{
-			Issuer:    "service project", // TODO: Configure issuer
+			Issuer:    Issuer,
 			Subject:   usr.ID,
-			Audience:  "students",
+			Audience:  "users",
 			ExpiresAt: now.Add(time.Hour).Unix(),
 			IssuedAt:  now.Unix(),
 		},

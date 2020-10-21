@@ -15,6 +15,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+var Issuer = "MB Appiness Solutions"
+
 // GenToken generates a JWT for the specified user.
 func GenToken(traceID string, log *log.Logger, cfg database.Config, id string, privateKeyFile string, algorithm string) error {
 	if id == "" || privateKeyFile == "" || algorithm == "" {
@@ -94,7 +96,7 @@ func GenToken(traceID string, log *log.Logger, cfg database.Config, id string, p
 	// jti (JWT ID): Unique identifier; can be used to prevent the JWT from being replayed (allows a token to be used only once)
 	claims = auth.Claims{
 		StandardClaims: jwt.StandardClaims{
-			Issuer:    "service project",
+			Issuer:    Issuer,
 			Subject:   usr.ID,
 			ExpiresAt: time.Now().Add(8760 * time.Hour).Unix(),
 			IssuedAt:  time.Now().Unix(),

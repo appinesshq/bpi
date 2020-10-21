@@ -30,9 +30,9 @@ func TestProduct(t *testing.T) {
 
 			claims := auth.Claims{
 				StandardClaims: jwt.StandardClaims{
-					Issuer:    "service project",
+					Issuer:    "MB Appiness Solutions",
 					Subject:   "718ffbea-f4a1-4667-8ae3-b349da52675e",
-					Audience:  "students",
+					Audience:  "users",
 					ExpiresAt: now.Add(time.Hour).Unix(),
 					IssuedAt:  now.Unix(),
 				},

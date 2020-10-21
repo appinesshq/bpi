@@ -43,9 +43,9 @@ func TestUser(t *testing.T) {
 
 			claims := auth.Claims{
 				StandardClaims: jwt.StandardClaims{
-					Issuer:    "service project", // TODO: Configure issuer
+					Issuer:    "MB Appiness Solutions",
 					Subject:   usr.ID,
-					Audience:  "students",
+					Audience:  "users",
 					ExpiresAt: now.Add(time.Hour).Unix(),
 					IssuedAt:  now.Unix(),
 				},
@@ -69,8 +69,8 @@ func TestUser(t *testing.T) {
 
 			claims = auth.Claims{
 				StandardClaims: jwt.StandardClaims{
-					Issuer:    "service project",
-					Audience:  "students",
+					Issuer:    "MB Appiness Solutions",
+					Audience:  "users",
 					ExpiresAt: now.Add(time.Hour).Unix(),
 					IssuedAt:  now.Unix(),
 				},
@@ -195,9 +195,9 @@ func TestAuthenticate(t *testing.T) {
 			want := auth.Claims{
 				Roles: usr.Roles,
 				StandardClaims: jwt.StandardClaims{
-					Issuer:    "service project",
+					Issuer:    "MB Appiness Solutions",
 					Subject:   usr.ID,
-					Audience:  "students",
+					Audience:  "users",
 					ExpiresAt: now.Add(time.Hour).Unix(),
 					IssuedAt:  now.Unix(),
 				},
