@@ -4,6 +4,9 @@ github.com/ardanlabs/conf
 # github.com/ardanlabs/graphql v1.4.2
 ## explicit
 github.com/ardanlabs/graphql
+# github.com/dgrijalva/jwt-go v3.2.0+incompatible
+## explicit
+github.com/dgrijalva/jwt-go
 # github.com/google/go-cmp v0.5.1
 ## explicit
 github.com/google/go-cmp/cmp
@@ -14,3 +17,7 @@ github.com/google/go-cmp/cmp/internal/value
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
+# golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
+## explicit
+golang.org/x/crypto/bcrypt
+golang.org/x/crypto/blowfish

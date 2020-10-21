@@ -8,6 +8,7 @@ import (
 
 	"github.com/appinesshq/bpi/app/admin/commands"
 	"github.com/appinesshq/bpi/business/data"
+	"github.com/appinesshq/bpi/business/data/user"
 	"github.com/ardanlabs/conf"
 	"github.com/pkg/errors"
 )
@@ -108,8 +109,36 @@ func run(log *log.Logger) error {
 			return errors.Wrap(err, "seeding database")
 		}
 
+	case "keygen":
+		if err := commands.KeyGen(); err != nil {
+			return errors.Wrap(err, "generating keys")
+		}
+
+	case "gentoken":
+		email := cfg.Args.Num(1)
+		privateKeyFile := cfg.Args.Num(2)
+		algorithm := cfg.Args.Num(3)
+		if err := commands.GenToken(gqlConfig, email, privateKeyFile, algorithm); err != nil {
+			return errors.Wrap(err, "generating token")
+		}
+
+	case "adduser":
+		newUser := user.NewUser{
+			Email:    cfg.Args.Num(1),
+			Password: cfg.Args.Num(2),
+			Role:     cfg.Args.Num(3),
+		}
+
+		if err := commands.AddUser(gqlConfig, newUser); err != nil {
+			return errors.Wrap(err, "adding user")
+		}
+
 	default:
 		fmt.Println("schema: update the schema in the database")
+		fmt.Println("adduser: add a new user to the system")
+		fmt.Println("keygen: generate a set of private/public key files")
+		fmt.Println("gentoken: generate a JWT for a user with claims")
+		fmt.Println("provide a command to get more help.")
 		return commands.ErrHelp
 	}
 

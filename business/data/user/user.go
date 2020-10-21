@@ -3,10 +3,15 @@ package user
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
+	"time"
 
+	"github.com/appinesshq/bpi/business/data/auth"
 	"github.com/ardanlabs/graphql"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Set of error variables for CRUD operations.
@@ -14,18 +19,43 @@ var (
 	ErrNotExists = errors.New("user does not exist")
 	ErrExists    = errors.New("user exists")
 	ErrNotFound  = errors.New("user not found")
+
+	// ErrAuthenticationFailure occurs when a user attempts to authenticate but
+	// anything goes wrong.
+	ErrAuthenticationFailure = errors.New("authentication failed")
 )
+
+var (
+	ClaimsIssuer = "MB Appiness Solutions"
+	PasswordSalt = "kdlfwreoijg9843jht98J*JT($JTJrgOHIGH(*YTOghhEht(*HT89hYG(*HG9OIUg4h984H(*hp*Hghirhghwgrgiusrhiugb5486TEFgrj9ugjwfe4w4eyrg243"
+	EmailSalt    = "qwyrgyyHGRIUHGU4TRIT5IUYu4tui8rgoireugojgireg05y095y09i5iuh9i9itehitreytijgaejhtbbvnv,nzxbvlkgnlkMRGLKMHPOHIYEHJIbfnDfkjsfd7"
+)
+
+func hash(s string) string {
+	h := sha256.New()
+	h.Write([]byte(s))
+	return fmt.Sprintf("%x", h.Sum(nil))
+}
 
 // Add adds a new user to the database. If the user already exists
 // this function will fail but the found user is returned. If the user is
 // being added, the user with the id from the database is returned.
-func Add(ctx context.Context, gql *graphql.GraphQL, nu NewUser) (User, error) {
-	u := User{
-		Email:    nu.Email,
-		Password: nu.Password,
+func Add(ctx context.Context, gql *graphql.GraphQL, nu NewUser, now time.Time) (User, error) {
+	pwdHash, err := bcrypt.GenerateFromPassword([]byte(PasswordSalt+nu.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return User{}, errors.Wrap(err, "hashing password")
 	}
 
-	u, err := add(ctx, gql, u)
+	// Prepare the new user. The email address is SHA256 hashed for GDPR compliance.
+	u := User{
+		Email:        hash(EmailSalt + nu.Email),
+		Password:     string(pwdHash),
+		Role:         nu.Role,
+		DateCreated:  now,
+		DateModified: now,
+	}
+
+	u, err = add(ctx, gql, u)
 	if err != nil {
 		return User{}, errors.Wrap(err, "adding user to database")
 	}
@@ -40,9 +70,12 @@ func One(ctx context.Context, gql *graphql.GraphQL, userID string) (User, error)
 		getUser(id: %q) {
 			id
 			email
+			role
 			profile {
 				id
 			}
+			date_created
+			date_modified
 		}
 	}`, userID)
 
@@ -67,11 +100,14 @@ query {
 	queryUser(filter: { email: { eq: %q } }) {
 		id
 		email
+		role
 		profile {
 			id
 		}
+		date_created
+		date_modified
 	}
-}`, email)
+}`, hash(EmailSalt+email))
 
 	var result struct {
 		QueryUser []User `json:"queryUser"`
@@ -85,6 +121,54 @@ query {
 	}
 
 	return result.QueryUser[0], nil
+}
+
+func Authenticate(ctx context.Context, gql *graphql.GraphQL, email string, password string, now time.Time) (auth.Claims, error) {
+	query := fmt.Sprintf(`
+		query {
+			queryUser(filter: { email: { eq: %q } }) {
+				id
+				password
+				role
+			}
+		}`, hash(EmailSalt+email))
+
+	var result struct {
+		QueryUser []User `json:"queryUser"`
+	}
+	if err := gql.Query(ctx, query, &result); err != nil {
+		return auth.Claims{}, errors.Wrap(err, "query failed")
+	}
+
+	if len(result.QueryUser) != 1 {
+		return auth.Claims{}, ErrNotFound
+	}
+
+	u := result.QueryUser[0]
+
+	fmt.Println("**********************************************************", u.Password)
+	// Compare the provided password with the saved hash. Use the bcrypt
+	// comparison function so it is cryptographically secure.
+	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(PasswordSalt+password)); err != nil {
+		return auth.Claims{}, ErrAuthenticationFailure
+	}
+
+	// If we are this far the request is valid. Create some claims for the user
+	// and generate their token.
+	claims := auth.Claims{
+		StandardClaims: jwt.StandardClaims{
+			Issuer:    ClaimsIssuer,
+			Subject:   u.ID,
+			Audience:  "users",
+			ExpiresAt: now.Add(time.Hour).Unix(),
+			IssuedAt:  now.Unix(),
+		},
+		Auth: auth.StandardClaims{
+			Role: u.Role,
+		},
+	}
+
+	return claims, nil
 }
 
 // =============================================================================
@@ -110,9 +194,17 @@ mutation {
 	addUser(input: [{
 		email: %q
 		password: %q
+		role: %s
+		date_created: %q
+		date_modified: %q
 	}])
 	%s
-}`, user.Email, user.Password, result.document())
+}`, user.Email,
+		user.Password,
+		user.Role,
+		user.DateCreated.UTC().Format(time.RFC3339),
+		user.DateModified.UTC().Format(time.RFC3339),
+		result.document())
 
 	return mutation, result
 }

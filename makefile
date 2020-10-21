@@ -1,5 +1,6 @@
 SHELL := /bin/bash
 
+# ==============================================================================
 # Running from within docker compose
 
 run: up
@@ -13,6 +14,7 @@ down:
 logs:
 	docker-compose -f compose.yaml logs -f
 
+# ==============================================================================
 # Administration
 
 schema:
@@ -21,6 +23,37 @@ schema:
 seed:
 	go run app/admin/main.go seed
 
+keys:
+	go run app/admin/main.go keygen
+
+token:
+	go run app/admin/main.go gentoken $(ARGS)
+
+user:
+	go run app/admin/main.go adduser $(ARGS)
+
+
+# Modules support
+
+deps-reset:
+	git checkout -- go.mod
+	go mod tidy
+	go mod vendor
+
+tidy:
+	go mod tidy
+	go mod vendor
+
+deps-upgrade:
+	go get -u -t -d -v ./...
+	go mod tidy
+	go mod vendor
+
+deps-cleancache:
+	go clean -modcache
+
+
+# ==============================================================================
 # Running tests within the local computer
 
 test:
