@@ -29,7 +29,7 @@ func TestUser(t *testing.T) {
 			traceID := "00000000-0000-0000-0000-000000000000"
 
 			nu := user.NewUser{
-				Email:           "bill@ardanlabs.com",
+				Email:           "william@example.com",
 				Roles:           []string{auth.RoleAdmin},
 				Password:        "gophers",
 				PasswordConfirm: "gophers",
@@ -64,7 +64,7 @@ func TestUser(t *testing.T) {
 			t.Logf("\t%s\tTest %d:\tShould get back the same user.", tests.Success, testID)
 
 			upd := user.UpdateUser{
-				Email: tests.StringPointer("jacob@ardanlabs.com"),
+				Email: tests.StringPointer("john@example.com"),
 			}
 
 			claims = auth.Claims{
@@ -88,10 +88,10 @@ func TestUser(t *testing.T) {
 			}
 			t.Logf("\t%s\tTest %d:\tShould be able to retrieve user by Email.", tests.Success, testID)
 
-			if saved.Email != *upd.Email {
+			if saved.Email != "931c4723049729bc7b391a5d60d4c9cf84a963218c0da1f408144852a6ef78fa" {
 				t.Errorf("\t%s\tTest %d:\tShould be able to see updates to Email.", tests.Failed, testID)
 				t.Logf("\t\tTest %d:\tGot: %v", testID, saved.Email)
-				t.Logf("\t\tTest %d:\tExp: %v", testID, *upd.Email)
+				t.Logf("\t\tTest %d:\tExp: %v", testID, "931c4723049729bc7b391a5d60d4c9cf84a963218c0da1f408144852a6ef78fa")
 			} else {
 				t.Logf("\t%s\tTest %d:\tShould be able to see updates to Email.", tests.Success, testID)
 			}
@@ -174,7 +174,7 @@ func TestAuthenticate(t *testing.T) {
 			traceID := "00000000-0000-0000-0000-000000000000"
 
 			nu := user.NewUser{
-				Email:           "anna@ardanlabs.com",
+				Email:           "jane@example.com",
 				Roles:           []string{auth.RoleAdmin},
 				Password:        "goroutines",
 				PasswordConfirm: "goroutines",
@@ -186,7 +186,7 @@ func TestAuthenticate(t *testing.T) {
 			}
 			t.Logf("\t%s\tTest %d:\tShould be able to create user.", tests.Success, testID)
 
-			claims, err := u.Authenticate(ctx, traceID, now, "anna@ardanlabs.com", "goroutines")
+			claims, err := u.Authenticate(ctx, traceID, now, "jane@example.com", "goroutines")
 			if err != nil {
 				t.Fatalf("\t%s\tTest %d:\tShould be able to generate claims : %s.", tests.Failed, testID, err)
 			}

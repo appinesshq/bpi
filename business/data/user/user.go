@@ -3,7 +3,9 @@ package user
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
 
@@ -30,7 +32,20 @@ var (
 
 	// ErrForbidden occurs when a user tries to do something that is forbidden to them according to our access control policies.
 	ErrForbidden = errors.New("attempted action is not allowed")
+
+	// PasswordSalt is the salt value which will be addedd to passwords during the hashing process for extra security.
+	PasswordSalt = "joireu98ytu98grHROIHGWJREOIJOIJroJ5Y09JRATHJOIHJj5y09aeoirjroiejjrtjhJROIJIJyjHJroisjh509e5e0jte0jhreoijtkjrtrej9yg"
+
+	// EmailSalt is the salt value which will be addedd to emails during the hashing process for extra security.
+	// Emails are hashed for GDPR compliance.
+	EmailSalt = "nbkjvnKJNBKJNFNKFbnkfnte80bnfdb5e5090hetaoijknbnjvNKSFBfnkjneinF8I*H$%IHIGRiuhgIUNGEibus8b8s9rnbnrwengiubi4w9898U8H"
 )
+
+// HashEmail hashes the provided email address for GDPR compliance.
+func hashEmail(email string) string {
+	sum := sha256.Sum256([]byte(EmailSalt + email))
+	return fmt.Sprintf("%x", sum)
+}
 
 // User manages the set of API's for user access.
 type User struct {
@@ -51,14 +66,14 @@ func (u User) Create(ctx context.Context, traceID string, nu NewUser, now time.T
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "internal.data.user.create")
 	defer span.End()
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(nu.Password), bcrypt.DefaultCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte(PasswordSalt+nu.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return Info{}, errors.Wrap(err, "generating password hash")
 	}
 
 	usr := Info{
 		ID:           uuid.New().String(),
-		Email:        nu.Email,
+		Email:        hashEmail(nu.Email),
 		PasswordHash: hash,
 		Roles:        nu.Roles,
 		DateCreated:  now.UTC(),
@@ -93,7 +108,7 @@ func (u User) Update(ctx context.Context, traceID string, claims auth.Claims, us
 	}
 
 	if uu.Email != nil {
-		usr.Email = *uu.Email
+		usr.Email = hashEmail(*uu.Email)
 	}
 	if uu.Roles != nil {
 		usr.Roles = uu.Roles
@@ -225,6 +240,8 @@ func (u User) QueryByEmail(ctx context.Context, traceID string, claims auth.Clai
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.user.querybyemail")
 	defer span.End()
 
+	email = hashEmail(email)
+
 	const q = `
 	SELECT
 		*
@@ -260,6 +277,8 @@ func (u User) Authenticate(ctx context.Context, traceID string, now time.Time, e
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.user.authenticate")
 	defer span.End()
 
+	email = hashEmail(email)
+
 	const q = `
 	SELECT
 		*
@@ -286,7 +305,7 @@ func (u User) Authenticate(ctx context.Context, traceID string, now time.Time, e
 
 	// Compare the provided password with the saved hash. Use the bcrypt
 	// comparison function so it is cryptographically secure.
-	if err := bcrypt.CompareHashAndPassword(usr.PasswordHash, []byte(password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword(usr.PasswordHash, []byte(PasswordSalt+password)); err != nil {
 		return auth.Claims{}, ErrAuthenticationFailure
 	}
 
@@ -294,7 +313,7 @@ func (u User) Authenticate(ctx context.Context, traceID string, now time.Time, e
 	// and generate their token.
 	claims := auth.Claims{
 		StandardClaims: jwt.StandardClaims{
-			Issuer:    "service project",
+			Issuer:    "service project", // TODO: Configure issuer
 			Subject:   usr.ID,
 			Audience:  "students",
 			ExpiresAt: now.Add(time.Hour).Unix(),

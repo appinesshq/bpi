@@ -398,7 +398,7 @@ func (ut *UserTests) crudUser(t *testing.T) {
 // postUser201 validates a user can be created with the endpoint.
 func (ut *UserTests) postUser201(t *testing.T) user.Info {
 	nu := user.NewUser{
-		Email:           "bill@ardanlabs.com",
+		Email:           "william@example.com",
 		Roles:           []string{auth.RoleAdmin},
 		Password:        "gophers",
 		PasswordConfirm: "gophers",
@@ -435,7 +435,7 @@ func (ut *UserTests) postUser201(t *testing.T) user.Info {
 			// Define what we wanted to receive. We will just trust the generated
 			// fields like ID and Dates so we copy u.
 			exp := got
-			exp.Email = "bill@ardanlabs.com"
+			exp.Email = "04fc70738bdb6cbb35091f4f7fd0f385cc59b15a28751c856b1786d917969988"
 			exp.Roles = []string{auth.RoleAdmin}
 
 			if diff := cmp.Diff(got, exp); diff != "" {
@@ -496,7 +496,7 @@ func (ut *UserTests) getUser200(t *testing.T, id string) {
 			// fields like Dates so we copy p.
 			exp := got
 			exp.ID = id
-			exp.Email = "bill@ardanlabs.com"
+			exp.Email = "04fc70738bdb6cbb35091f4f7fd0f385cc59b15a28751c856b1786d917969988"
 			exp.Roles = []string{auth.RoleAdmin}
 
 			if diff := cmp.Diff(got, exp); diff != "" {
@@ -543,8 +543,8 @@ func (ut *UserTests) putUser204(t *testing.T, id string) {
 				t.Fatalf("\t%s\tTest %d:\tShould be able to unmarshal the response : %v", tests.Failed, testID, err)
 			}
 
-			if ru.Email != "john@example.com" {
-				t.Fatalf("\t%s\tTest %d:\tShould see an updated Email : got %q want %q", tests.Failed, testID, ru.Email, "john@example.com")
+			if ru.Email != "931c4723049729bc7b391a5d60d4c9cf84a963218c0da1f408144852a6ef78fa" {
+				t.Fatalf("\t%s\tTest %d:\tShould see an updated Email : got %q want %q", tests.Failed, testID, ru.Email, "931c4723049729bc7b391a5d60d4c9cf84a963218c0da1f408144852a6ef78fa")
 			}
 			t.Logf("\t%s\tTest %d:\tShould see an updated Email.", tests.Success, testID)
 
