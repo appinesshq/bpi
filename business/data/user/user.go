@@ -58,7 +58,6 @@ func (u User) Create(ctx context.Context, traceID string, nu NewUser, now time.T
 
 	usr := Info{
 		ID:           uuid.New().String(),
-		Name:         nu.Name,
 		Email:        nu.Email,
 		PasswordHash: hash,
 		Roles:        nu.Roles,
@@ -68,15 +67,15 @@ func (u User) Create(ctx context.Context, traceID string, nu NewUser, now time.T
 
 	const q = `
 	INSERT INTO users
-		(user_id, name, email, password_hash, roles, date_created, date_updated)
+		(user_id, email, password_hash, roles, date_created, date_updated)
 	VALUES
-		($1, $2, $3, $4, $5, $6, $7)`
+		($1, $2, $3, $4, $5, $6)`
 
 	u.log.Printf("%s: %s: %s", traceID, "user.Create",
-		database.Log(q, usr.ID, usr.Name, usr.Email, usr.PasswordHash, usr.Roles, usr.DateCreated, usr.DateUpdated),
+		database.Log(q, usr.ID, usr.Email, usr.PasswordHash, usr.Roles, usr.DateCreated, usr.DateUpdated),
 	)
 
-	if _, err = u.db.ExecContext(ctx, q, usr.ID, usr.Name, usr.Email, usr.PasswordHash, usr.Roles, usr.DateCreated, usr.DateUpdated); err != nil {
+	if _, err = u.db.ExecContext(ctx, q, usr.ID, usr.Email, usr.PasswordHash, usr.Roles, usr.DateCreated, usr.DateUpdated); err != nil {
 		return Info{}, errors.Wrap(err, "inserting user")
 	}
 
@@ -93,9 +92,6 @@ func (u User) Update(ctx context.Context, traceID string, claims auth.Claims, us
 		return err
 	}
 
-	if uu.Name != nil {
-		usr.Name = *uu.Name
-	}
 	if uu.Email != nil {
 		usr.Email = *uu.Email
 	}
@@ -115,19 +111,18 @@ func (u User) Update(ctx context.Context, traceID string, claims auth.Claims, us
 	UPDATE
 		users
 	SET 
-		"name" = $2,
-		"email" = $3,
-		"roles" = $4,
-		"password_hash" = $5,
-		"date_updated" = $6
+		"email" = $2,
+		"roles" = $3,
+		"password_hash" = $4,
+		"date_updated" = $5
 	WHERE
 		user_id = $1`
 
 	u.log.Printf("%s: %s: %s", traceID, "user.Update",
-		database.Log(q, usr.ID, usr.Name, usr.Email, usr.Roles, usr.PasswordHash, usr.DateCreated, usr.DateUpdated),
+		database.Log(q, usr.ID, usr.Email, usr.Roles, usr.PasswordHash, usr.DateCreated, usr.DateUpdated),
 	)
 
-	if _, err = u.db.ExecContext(ctx, q, userID, usr.Name, usr.Email, usr.Roles, usr.PasswordHash, usr.DateUpdated); err != nil {
+	if _, err = u.db.ExecContext(ctx, q, userID, usr.Email, usr.Roles, usr.PasswordHash, usr.DateUpdated); err != nil {
 		return errors.Wrap(err, "updating user")
 	}
 

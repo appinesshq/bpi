@@ -9,7 +9,6 @@ import (
 // Info represents an individual user.
 type Info struct {
 	ID           string         `db:"user_id" json:"id"`
-	Name         string         `db:"name" json:"name"`
 	Email        string         `db:"email" json:"email"`
 	Roles        pq.StringArray `db:"roles" json:"roles"`
 	PasswordHash []byte         `db:"password_hash" json:"-"`
@@ -19,7 +18,6 @@ type Info struct {
 
 // NewUser contains information needed to create a new User.
 type NewUser struct {
-	Name            string   `json:"name" validate:"required"`
 	Email           string   `json:"email" validate:"required,email"`
 	Roles           []string `json:"roles" validate:"required"`
 	Password        string   `json:"password" validate:"required"`
@@ -33,7 +31,6 @@ type NewUser struct {
 // we do not want to use pointers to basic types but we make exceptions around
 // marshalling/unmarshalling.
 type UpdateUser struct {
-	Name            *string  `json:"name"`
 	Email           *string  `json:"email" validate:"omitempty,email"`
 	Roles           []string `json:"roles"`
 	Password        *string  `json:"password"`

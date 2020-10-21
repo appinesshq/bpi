@@ -29,7 +29,6 @@ func TestUser(t *testing.T) {
 			traceID := "00000000-0000-0000-0000-000000000000"
 
 			nu := user.NewUser{
-				Name:            "Bill Kennedy",
 				Email:           "bill@ardanlabs.com",
 				Roles:           []string{auth.RoleAdmin},
 				Password:        "gophers",
@@ -44,7 +43,7 @@ func TestUser(t *testing.T) {
 
 			claims := auth.Claims{
 				StandardClaims: jwt.StandardClaims{
-					Issuer:    "service project",
+					Issuer:    "service project", // TODO: Configure issuer
 					Subject:   usr.ID,
 					Audience:  "students",
 					ExpiresAt: now.Add(time.Hour).Unix(),
@@ -65,7 +64,6 @@ func TestUser(t *testing.T) {
 			t.Logf("\t%s\tTest %d:\tShould get back the same user.", tests.Success, testID)
 
 			upd := user.UpdateUser{
-				Name:  tests.StringPointer("Jacob Walker"),
 				Email: tests.StringPointer("jacob@ardanlabs.com"),
 			}
 
@@ -89,14 +87,6 @@ func TestUser(t *testing.T) {
 				t.Fatalf("\t%s\tTest %d:\tShould be able to retrieve user by Email : %s.", tests.Failed, testID, err)
 			}
 			t.Logf("\t%s\tTest %d:\tShould be able to retrieve user by Email.", tests.Success, testID)
-
-			if saved.Name != *upd.Name {
-				t.Errorf("\t%s\tTest %d:\tShould be able to see updates to Name.", tests.Failed, testID)
-				t.Logf("\t\tTest %d:\tGot: %v", testID, saved.Name)
-				t.Logf("\t\tTest %d:\tExp: %v", testID, *upd.Name)
-			} else {
-				t.Logf("\t%s\tTest %d:\tShould be able to see updates to Name.", tests.Success, testID)
-			}
 
 			if saved.Email != *upd.Email {
 				t.Errorf("\t%s\tTest %d:\tShould be able to see updates to Email.", tests.Failed, testID)
@@ -184,7 +174,6 @@ func TestAuthenticate(t *testing.T) {
 			traceID := "00000000-0000-0000-0000-000000000000"
 
 			nu := user.NewUser{
-				Name:            "Anna Walker",
 				Email:           "anna@ardanlabs.com",
 				Roles:           []string{auth.RoleAdmin},
 				Password:        "goroutines",
