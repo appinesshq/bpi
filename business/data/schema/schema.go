@@ -40,6 +40,21 @@ CREATE TABLE users (
 	},
 	{
 		Version:     1.2,
+		Description: "Create table profiles",
+		Script: `
+CREATE TABLE profiles (
+	profile_id   UUID,
+	username     TEXT UNIQUE,
+	display_name TEXT,
+	user_id UUID DEFAULT '00000000-0000-0000-0000-000000000000',
+	date_created TIMESTAMP,
+	date_updated TIMESTAMP,
+
+	PRIMARY KEY (profile_id)
+);`,
+	},
+	{
+		Version:     1.3,
 		Description: "Create table products",
 		Script: `
 CREATE TABLE products (
@@ -47,6 +62,7 @@ CREATE TABLE products (
 	name         TEXT,
 	cost         INT,
 	quantity     INT,
+	user_id UUID DEFAULT '00000000-0000-0000-0000-000000000000',
 	date_created TIMESTAMP,
 	date_updated TIMESTAMP,
 
@@ -54,7 +70,7 @@ CREATE TABLE products (
 );`,
 	},
 	{
-		Version:     1.3,
+		Version:     1.4,
 		Description: "Create table sales",
 		Script: `
 CREATE TABLE sales (
@@ -67,13 +83,5 @@ CREATE TABLE sales (
 	PRIMARY KEY (sale_id),
 	FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
 );`,
-	},
-	{
-		Version:     2.1,
-		Description: "Alter table products with user column",
-		Script: `
-ALTER TABLE products
-	ADD COLUMN user_id UUID DEFAULT '00000000-0000-0000-0000-000000000000'
-`,
 	},
 }
