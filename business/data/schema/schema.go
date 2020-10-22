@@ -55,6 +55,36 @@ CREATE TABLE profiles (
 	},
 	{
 		Version:     1.3,
+		Description: "Create table countries",
+		Script: `
+CREATE TABLE countries (
+	country_id    INT UNIQUE,
+	code  		  TEXT UNIQUE,
+	name 		  TEXT,
+	currency_code TEXT,
+	currency_name TEXT,
+	active BOOL DEFAULT FALSE,
+
+	PRIMARY KEY (country_id)
+);`,
+	},
+	{
+		Version:     1.4,
+		Description: "Create table jurisdiction",
+		Script: `
+CREATE TABLE jurisdictions (
+	jurisdiction_id INT UNIQUE,
+	code  			TEXT UNIQUE,
+	country_code 	TEXT,
+	name		 	TEXT,
+	active 			BOOL DEFAULT FALSE,
+
+	PRIMARY KEY (jurisdiction_id),
+	FOREIGN KEY (country_code) REFERENCES countries(code) ON DELETE CASCADE
+);`,
+	},
+	{
+		Version:     2.1,
 		Description: "Create table products",
 		Script: `
 CREATE TABLE products (
@@ -70,7 +100,7 @@ CREATE TABLE products (
 );`,
 	},
 	{
-		Version:     1.4,
+		Version:     2.2,
 		Description: "Create table sales",
 		Script: `
 CREATE TABLE sales (

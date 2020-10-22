@@ -124,6 +124,20 @@ func run(log *log.Logger) error {
 			return errors.Wrap(err, "generating token")
 		}
 
+	case "countries":
+		s, err := commands.CountrySeed()
+		if err != nil {
+			return errors.Wrap(err, "generating seed")
+		}
+		fmt.Println(s)
+
+	case "jurisdictions":
+		s, err := commands.JurisdictionSeed()
+		if err != nil {
+			return errors.Wrap(err, "generating seed")
+		}
+		fmt.Println(s)
+
 	default:
 		fmt.Println("migrate: create the schema in the database")
 		fmt.Println("seed: add data to the database")

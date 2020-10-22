@@ -35,6 +35,10 @@ github.com/google/uuid
 ## explicit
 github.com/jmoiron/sqlx
 github.com/jmoiron/sqlx/reflectx
+# github.com/jszwec/csvutil v1.2.1
+github.com/jszwec/csvutil
+# github.com/krolaw/zipstream v0.0.0-20180621105154-0a2661891f94
+github.com/krolaw/zipstream
 # github.com/leodido/go-urn v1.2.0
 ## explicit
 github.com/leodido/go-urn
@@ -43,6 +47,12 @@ github.com/leodido/go-urn
 github.com/lib/pq
 github.com/lib/pq/oid
 github.com/lib/pq/scram
+# github.com/mkrou/geonames v1.0.0
+## explicit
+github.com/mkrou/geonames
+github.com/mkrou/geonames/csv
+github.com/mkrou/geonames/models
+github.com/mkrou/geonames/stream
 # github.com/openzipkin/zipkin-go v0.2.5
 github.com/openzipkin/zipkin-go/model
 # github.com/pkg/errors v0.9.1

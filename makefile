@@ -106,6 +106,12 @@ migrate:
 seed: migrate
 	go run app/bpi-admin/main.go seed
 
+countries: migrate
+	go run app/bpi-admin/main.go countries
+
+jurisdictions: migrate
+	go run app/bpi-admin/main.go jurisdictions
+
 # ==============================================================================
 # Running tests within the local computer
 
