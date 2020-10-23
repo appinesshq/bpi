@@ -9,55 +9,55 @@ import (
 	"testing"
 
 	"github.com/appinesshq/bpi/app/bpi-api/handlers"
-	"github.com/appinesshq/bpi/business/data/country"
+	"github.com/appinesshq/bpi/business/data/jurisdiction"
 	"github.com/appinesshq/bpi/business/tests"
 	"github.com/google/go-cmp/cmp"
 )
 
-// CountryTests holds methods for each country subtest. This type allows
+// JurisdictionTests holds methods for each jurisdiction subtest. This type allows
 // passing dependencies for tests while still providing a convenient syntax
 // when subtests are registered.
-type CountryTests struct {
+type JurisdictionTests struct {
 	app       http.Handler
 	userToken string
 }
 
-// TestCountries runs a series of tests to exercise Country behavior from the
+// TestJurisdictions runs a series of tests to exercise Jurisdiction behavior from the
 // API level. The subtests all share the same database and application for
 // speed and convenience. The downside is the order the tests are ran matters
 // and one test may break if other tests are not ran before it. If a particular
 // subtest needs a fresh instance of the application it can make it or it
 // should be its own Test* function.
-func TestCountries(t *testing.T) {
+func TestJurisdictions(t *testing.T) {
 	test := tests.NewIntegration(t)
 	t.Cleanup(test.Teardown)
 
 	shutdown := make(chan os.Signal, 1)
-	tests := CountryTests{
+	tests := JurisdictionTests{
 		app:       handlers.API("develop", shutdown, test.Log, test.Auth, test.DB),
 		userToken: test.Token(test.KID, "admin@example.com", "gophers"),
 	}
 
-	t.Run("getCountry404", tests.getCountry404)
-	t.Run("getCountry400", tests.getCountry400)
-	t.Run("putCountry404", tests.putCountry404)
-	t.Run("crudCountries", tests.crudCountry)
+	t.Run("getJurisdiction404", tests.getJurisdiction404)
+	t.Run("getJurisdiction400", tests.getJurisdiction400)
+	t.Run("putJurisdiction404", tests.putJurisdiction404)
+	t.Run("crudJurisdictions", tests.crudJurisdictions)
 }
 
-// getCountry400 validates a country request for a malformed id.
-func (ct *CountryTests) getCountry400(t *testing.T) {
+// getJurisdiction400 validates a jurisdiction request for a malformed id.
+func (ct *JurisdictionTests) getJurisdiction400(t *testing.T) {
 	id := "QQQ"
 
-	r := httptest.NewRequest(http.MethodGet, "/v1/countries/"+id, nil)
+	r := httptest.NewRequest(http.MethodGet, "/v1/jurisdictions/"+id, nil)
 	w := httptest.NewRecorder()
 
 	r.Header.Set("Authorization", "Bearer "+ct.userToken)
 	ct.app.ServeHTTP(w, r)
 
-	t.Log("Given the need to validate getting a country with a malformed id.")
+	t.Log("Given the need to validate getting a jurisdiction with a malformed id.")
 	{
 		testID := 0
-		t.Logf("\tTest %d:\tWhen using the new country %s.", testID, id)
+		t.Logf("\tTest %d:\tWhen using the new jurisdiction %s.", testID, id)
 		{
 			if w.Code != http.StatusBadRequest {
 				t.Fatalf("\t%s\tTest %d:\tShould receive a status code of 400 for the response : %v", tests.Failed, testID, w.Code)
@@ -76,20 +76,20 @@ func (ct *CountryTests) getCountry400(t *testing.T) {
 	}
 }
 
-// getCountry404 validates a country request for a country that does not exist with the endpoint.
-func (ct *CountryTests) getCountry404(t *testing.T) {
-	id := "QQ"
+// getJurisdiction404 validates a jurisdiction request for a jurisdiction that does not exist with the endpoint.
+func (ct *JurisdictionTests) getJurisdiction404(t *testing.T) {
+	id := "QQ.01"
 
-	r := httptest.NewRequest(http.MethodGet, "/v1/countries/"+id, nil)
+	r := httptest.NewRequest(http.MethodGet, "/v1/jurisdictions/"+id, nil)
 	w := httptest.NewRecorder()
 
 	r.Header.Set("Authorization", "Bearer "+ct.userToken)
 	ct.app.ServeHTTP(w, r)
 
-	t.Log("Given the need to validate getting a country with an unknown id.")
+	t.Log("Given the need to validate getting a jurisdiction with an unknown id.")
 	{
 		testID := 0
-		t.Logf("\tTest %d:\tWhen using the new country %s.", testID, id)
+		t.Logf("\tTest %d:\tWhen using the new jurisdiction %s.", testID, id)
 		{
 			if w.Code != http.StatusNotFound {
 				t.Fatalf("\t%s\tTest %d:\tShould receive a status code of 404 for the response : %v", tests.Failed, testID, w.Code)
@@ -108,20 +108,20 @@ func (ct *CountryTests) getCountry404(t *testing.T) {
 	}
 }
 
-// putCountry404 validates updating a country that does not exist.
-func (ct *CountryTests) putCountry404(t *testing.T) {
-	id := "QQ"
+// putJurisdiction404 validates updating a jurisdiction that does not exist.
+func (ct *JurisdictionTests) putJurisdiction404(t *testing.T) {
+	id := "QQ.01"
 
-	r := httptest.NewRequest(http.MethodPut, "/v1/countries/"+id, nil)
+	r := httptest.NewRequest(http.MethodPut, "/v1/jurisdictions/"+id, nil)
 	w := httptest.NewRecorder()
 
 	r.Header.Set("Authorization", "Bearer "+ct.userToken)
 	ct.app.ServeHTTP(w, r)
 
-	t.Log("Given the need to validate activating a country that does not exist.")
+	t.Log("Given the need to validate activating a jurisdiction that does not exist.")
 	{
 		testID := 0
-		t.Logf("\tTest %d:\tWhen using the new country %s.", testID, id)
+		t.Logf("\tTest %d:\tWhen using the new jurisdiction %s.", testID, id)
 		{
 			if w.Code != http.StatusNotFound {
 				t.Fatalf("\t%s\tTest %d:\tShould receive a status code of 404 for the response : %v", tests.Failed, testID, w.Code)
@@ -140,44 +140,43 @@ func (ct *CountryTests) putCountry404(t *testing.T) {
 	}
 }
 
-// crudCountry performs a complete test of CRUD against the api.
-func (ct *CountryTests) crudCountry(t *testing.T) {
-	ct.putCountry204(t, "LT")
-	ct.getCountry200(t, "LT")
+// crudJurisdictions performs a complete test of CRUD against the api.
+func (ct *JurisdictionTests) crudJurisdictions(t *testing.T) {
+	ct.putJurisdiction204(t, "LV.25")
+	ct.getJurisdiction200(t, "LV.25")
 }
 
-// getCountry200 validates a country request for an existing id.
-func (ct *CountryTests) getCountry200(t *testing.T, id string) {
-	r := httptest.NewRequest(http.MethodGet, "/v1/countries/"+id, nil)
+// getJurisdiction200 validates a jurisdiction request for an existing id.
+func (ct *JurisdictionTests) getJurisdiction200(t *testing.T, id string) {
+	r := httptest.NewRequest(http.MethodGet, "/v1/jurisdictions/"+id, nil)
 	w := httptest.NewRecorder()
 
 	r.Header.Set("Authorization", "Bearer "+ct.userToken)
 	ct.app.ServeHTTP(w, r)
 
-	t.Log("Given the need to validate getting a country that exists.")
+	t.Log("Given the need to validate getting a jurisdiction that exists.")
 	{
 		testID := 0
-		t.Logf("\tTest : %d\tWhen using the new country %s.", testID, id)
+		t.Logf("\tTest : %d\tWhen using the new jurisdiction %s.", testID, id)
 		{
 			if w.Code != http.StatusOK {
 				t.Fatalf("\t%s\tTest : %d\tShould receive a status code of 200 for the response : %v", tests.Failed, testID, w.Code)
 			}
 			t.Logf("\t%s\tTest : %d\tShould receive a status code of 200 for the response.", tests.Success, testID)
 
-			var got country.Info
+			var got jurisdiction.Info
 			if err := json.NewDecoder(w.Body).Decode(&got); err != nil {
 				t.Fatalf("\t%s\tTest : %d\tShould be able to unmarshal the response : %v", tests.Failed, testID, err)
 			}
 
 			// Define what we wanted to receive. We will just trust the generated
 			// fields like Dates so we copy p.
-			// (597427, 'LT', 'Lithuania', 'EUR', 'Euro')
+			// (456173, 'LV.25', 'LV', 'Riga')
 			exp := got
-			exp.GNID = 597427
-			exp.CountryCode = "LT"
-			exp.Name = "Lithuania"
-			exp.CurrencyCode = "EUR"
-			exp.CurrencyName = "Euro"
+			exp.GNID = 456173
+			exp.Code = "LV.25"
+			exp.CountryCode = "LV"
+			exp.Name = "Riga"
 
 			if diff := cmp.Diff(got, exp); diff != "" {
 				t.Fatalf("\t%s\tTest : %d\tShould get the expected result. Diff:\n%s", tests.Failed, testID, diff)
@@ -187,25 +186,34 @@ func (ct *CountryTests) getCountry200(t *testing.T, id string) {
 	}
 }
 
-// putCountry204 validates updating a country that does exist.
-func (ct *CountryTests) putCountry204(t *testing.T, id string) {
-	r := httptest.NewRequest(http.MethodPut, "/v1/countries/"+id, nil)
+// putJurisdiction204 validates updating a jurisdiction that does exist.
+func (ct *JurisdictionTests) putJurisdiction204(t *testing.T, id string) {
+	// Activate country for this test
+	{
+		r := httptest.NewRequest(http.MethodPut, "/v1/countries/LV", nil)
+		w := httptest.NewRecorder()
+
+		r.Header.Set("Authorization", "Bearer "+ct.userToken)
+		ct.app.ServeHTTP(w, r)
+	}
+
+	r := httptest.NewRequest(http.MethodPut, "/v1/jurisdictions/"+id, nil)
 	w := httptest.NewRecorder()
 
 	r.Header.Set("Authorization", "Bearer "+ct.userToken)
 	ct.app.ServeHTTP(w, r)
 
-	t.Log("Given the need to activate a country with the countries endpoint.")
+	t.Log("Given the need to activate a jurisdiction with the jurisdictions endpoint.")
 	{
 		testID := 0
-		t.Logf("\tTest %d:\tWhen using the modified country value.", testID)
+		t.Logf("\tTest %d:\tWhen using the modified jurisdiction value.", testID)
 		{
 			if w.Code != http.StatusNoContent {
 				t.Fatalf("\t%s\tTest %d:\tShould receive a status code of 204 for the response : %v", tests.Failed, testID, w.Code)
 			}
 			t.Logf("\t%s\tTest %d:\tShould receive a status code of 204 for the response.", tests.Success, testID)
 
-			r = httptest.NewRequest(http.MethodGet, "/v1/countries/"+id, nil)
+			r = httptest.NewRequest(http.MethodGet, "/v1/jurisdictions/"+id, nil)
 			w = httptest.NewRecorder()
 
 			r.Header.Set("Authorization", "Bearer "+ct.userToken)
@@ -216,15 +224,15 @@ func (ct *CountryTests) putCountry204(t *testing.T, id string) {
 			}
 			t.Logf("\t%s\tTest %d:\tShould receive a status code of 200 for the retrieve.", tests.Success, testID)
 
-			var ci country.Info
+			var ci jurisdiction.Info
 			if err := json.NewDecoder(w.Body).Decode(&ci); err != nil {
 				t.Fatalf("\t%s\tTest %d:\tShould be able to unmarshal the response : %v", tests.Failed, testID, err)
 			}
 
-			if ci.Name != "Lithuania" {
-				t.Fatalf("\t%s\tTest %d:\tShould see activated Country : got %q want %q", tests.Failed, testID, ci.Name, "Lithuania")
+			if ci.Name != "Riga" {
+				t.Fatalf("\t%s\tTest %d:\tShould see activated Jurisdiction : got %q want %q", tests.Failed, testID, ci.Name, "Riga")
 			}
-			t.Logf("\t%s\tTest %d:\tShould see an activated Country.", tests.Success, testID)
+			t.Logf("\t%s\tTest %d:\tShould see an activated Jurisdiction.", tests.Success, testID)
 		}
 	}
 }

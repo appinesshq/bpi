@@ -301,7 +301,7 @@ INSERT INTO countries (gnid, code, name, currency_code, currency_name) VALUES
 	(8505032, 'AN', 'Netherlands Antilles', 'ANG', 'Guilder')
 	ON CONFLICT DO NOTHING;
 
-INSERT INTO jurisdictions (jurisdiction_id, code, country_code, name) VALUES
+INSERT INTO jurisdictions (gnid, code, country_code, name) VALUES
 	(3039162, 'AD.06', 'AD', 'Sant Julià de Loria'),
 	(3039676, 'AD.05', 'AD', 'Ordino'),
 	(3040131, 'AD.04', 'AD', 'La Massana'),

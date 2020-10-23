@@ -73,13 +73,13 @@ CREATE TABLE countries (
 		Description: "Create table jurisdiction",
 		Script: `
 CREATE TABLE jurisdictions (
-	jurisdiction_id INT UNIQUE,
-	code  			TEXT UNIQUE,
+	code			TEXT UNIQUE,
+	gnid 			INT UNIQUE,
 	country_code 	TEXT,
 	name		 	TEXT,
 	active 			BOOL DEFAULT FALSE,
 
-	PRIMARY KEY (jurisdiction_id),
+	PRIMARY KEY (code),
 	FOREIGN KEY (country_code) REFERENCES countries(code) ON DELETE CASCADE
 );`,
 	},

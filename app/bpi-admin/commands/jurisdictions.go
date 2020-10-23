@@ -19,7 +19,7 @@ func getCountryCode(divCode string) (string, error) {
 
 func JurisdictionSeed() (string, error) {
 	b := bytes.Buffer{}
-	fmt.Fprint(&b, "INSERT INTO jurisdictions (jurisdiction_id, code, country_code, name) VALUES")
+	fmt.Fprint(&b, "INSERT INTO jurisdictions (gnid, code, country_code, name) VALUES")
 
 	p := geonames.NewParser()
 

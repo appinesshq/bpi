@@ -9,6 +9,7 @@ import (
 
 	"github.com/appinesshq/bpi/business/auth" // Import is removed in final PR
 	"github.com/appinesshq/bpi/business/data/country"
+	"github.com/appinesshq/bpi/business/data/jurisdiction"
 	"github.com/appinesshq/bpi/business/data/product"
 	"github.com/appinesshq/bpi/business/data/user"
 	"github.com/appinesshq/bpi/business/mid"
@@ -59,6 +60,14 @@ func API(build string, shutdown chan os.Signal, log *log.Logger, a *auth.Auth, d
 	app.Handle(http.MethodGet, "/v1/countries/:page/:rows", cog.query, mid.Authenticate(a))
 	app.Handle(http.MethodGet, "/v1/countries/:cc", cog.queryByCode, mid.Authenticate(a))
 	app.Handle(http.MethodPut, "/v1/countries/:cc", cog.toggleActive, mid.Authenticate(a))
+
+	// Register jurisdiction endpoints.
+	jg := jurisdictionGroup{
+		jurisdiction: jurisdiction.New(log, db),
+	}
+	app.Handle(http.MethodGet, "/v1/jurisdictions/:page/:rows", jg.query, mid.Authenticate(a))
+	app.Handle(http.MethodGet, "/v1/jurisdictions/:cc", jg.queryByCode, mid.Authenticate(a))
+	app.Handle(http.MethodPut, "/v1/jurisdictions/:cc", jg.toggleActive, mid.Authenticate(a))
 
 	return app
 }

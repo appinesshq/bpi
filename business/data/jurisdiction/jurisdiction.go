@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"strings"
 
 	"github.com/appinesshq/bpi/business/auth"
 	"github.com/appinesshq/bpi/foundation/database"
@@ -38,8 +39,8 @@ func New(log *log.Logger, db *sqlx.DB) Jurisdiction {
 	}
 }
 
-// Activate activates a jurisdiction in the database.
-func (j Jurisdiction) ToggleActivate(ctx context.Context, traceID string, claims auth.Claims, jurisdictionCode string) error {
+// ToggleActive activates a jurisdiction in the database.
+func (j Jurisdiction) ToggleActive(ctx context.Context, traceID string, claims auth.Claims, jurisdictionCode string) error {
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.jurisdiction.activate")
 	defer span.End()
 
@@ -121,38 +122,16 @@ func (j Jurisdiction) Query(ctx context.Context, traceID string, pageNumber int,
 	return jurisdictions, nil
 }
 
-// QueryByID gets the specified jurisdiction from the database.
-func (j Jurisdiction) QueryByID(ctx context.Context, traceID string, claims auth.Claims, jurisdictionID int) (Info, error) {
-	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.jurisdiction.querybyid")
-	defer span.End()
-
-	const q = `
-	SELECT
-		*
-	FROM
-		jurisdictions
-	WHERE 
-		jurisdiction_id = $1 AND active`
-
-	j.log.Printf("%s: %s: %s", traceID, "jurisdiction.QueryByID",
-		database.Log(q, jurisdictionID),
-	)
-
-	var jurisdiction Info
-	if err := j.db.GetContext(ctx, &jurisdiction, q, jurisdictionID); err != nil {
-		if err == sql.ErrNoRows {
-			return Info{}, ErrNotFound
-		}
-		return Info{}, errors.Wrapf(err, "selecting jurisdiction %q", jurisdictionID)
-	}
-
-	return jurisdiction, nil
-}
-
 // QueryByjurisdictionCode gets the specified jurisdiction from the database.
 func (j Jurisdiction) QueryByCode(ctx context.Context, traceID string, claims auth.Claims, jurisdictionCode string) (Info, error) {
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.jurisdiction.querybycode")
 	defer span.End()
+
+	// Check whether the ID is valid.
+	p := strings.Split(jurisdictionCode, ".")
+	if len(p) != 2 || len(p[0]) != 2 {
+		return Info{}, ErrInvalidID
+	}
 
 	const q = `
 	SELECT
