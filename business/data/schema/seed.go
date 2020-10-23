@@ -46,7 +46,7 @@ INSERT INTO sales (sale_id, product_id, quantity, paid, date_created) VALUES
 	('a235be9e-ab5d-44e6-a987-fa1c749264c7', '72f8b983-3eb4-48db-9ed0-e45cc6bd716b', 3, 225, '2019-01-01 00:00:05.000001+00')
 	ON CONFLICT DO NOTHING;
 
-INSERT INTO countries (country_id, code, name, currency_code, currency_name) VALUES
+INSERT INTO countries (gnid, code, name, currency_code, currency_name) VALUES
 	(3041565, 'AD', 'Andorra', 'EUR', 'Euro'),
 	(290557, 'AE', 'United Arab Emirates', 'AED', 'Dirham'),
 	(1149361, 'AF', 'Afghanistan', 'AFN', 'Afghani'),

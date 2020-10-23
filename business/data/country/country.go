@@ -38,8 +38,8 @@ func New(log *log.Logger, db *sqlx.DB) Country {
 	}
 }
 
-// Activate activates a country in the database.
-func (c Country) ToggleActivate(ctx context.Context, traceID string, claims auth.Claims, countryCode string) error {
+// ToggleActive toggles the activation state of  a country in the database.
+func (c Country) ToggleActive(ctx context.Context, traceID string, claims auth.Claims, countryCode string) error {
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.country.activate")
 	defer span.End()
 
@@ -117,38 +117,43 @@ func (c Country) Query(ctx context.Context, traceID string, pageNumber int, rows
 	return countries, nil
 }
 
-// QueryByID gets the specified country from the database.
-func (c Country) QueryByID(ctx context.Context, traceID string, claims auth.Claims, countryID int) (Info, error) {
-	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.country.querybyid")
-	defer span.End()
+// // QueryByID gets the specified country from the database.
+// func (c Country) QueryByID(ctx context.Context, traceID string, claims auth.Claims, countryID int) (Info, error) {
+// 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.country.querybyid")
+// 	defer span.End()
 
-	const q = `
-	SELECT
-		*
-	FROM
-		countries
-	WHERE 
-		country_id = $1 AND active`
+// 	const q = `
+// 	SELECT
+// 		*
+// 	FROM
+// 		countries
+// 	WHERE
+// 		gnid = $1 AND active`
 
-	c.log.Printf("%s: %s: %s", traceID, "country.QueryByID",
-		database.Log(q, countryID),
-	)
+// 	c.log.Printf("%s: %s: %s", traceID, "country.QueryByID",
+// 		database.Log(q, countryID),
+// 	)
 
-	var country Info
-	if err := c.db.GetContext(ctx, &country, q, countryID); err != nil {
-		if err == sql.ErrNoRows {
-			return Info{}, ErrNotFound
-		}
-		return Info{}, errors.Wrapf(err, "selecting country %q", countryID)
-	}
+// 	var country Info
+// 	if err := c.db.GetContext(ctx, &country, q, countryID); err != nil {
+// 		if err == sql.ErrNoRows {
+// 			return Info{}, ErrNotFound
+// 		}
+// 		return Info{}, errors.Wrapf(err, "selecting country %q", countryID)
+// 	}
 
-	return country, nil
-}
+// 	return country, nil
+// }
 
-// QueryByCountryCode gets the specified country from the database.
+// QueryByCode gets the specified country from the database.
 func (c Country) QueryByCode(ctx context.Context, traceID string, claims auth.Claims, countryCode string) (Info, error) {
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.country.querybycode")
 	defer span.End()
+
+	// Check whether the ID is valid.
+	if len(countryCode) != 2 {
+		return Info{}, ErrInvalidID
+	}
 
 	const q = `
 	SELECT

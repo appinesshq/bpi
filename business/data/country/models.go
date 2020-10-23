@@ -1,7 +1,7 @@
 package country
 
 type Info struct {
-	ID           int    `db:"country_id" json:"id"`
+	ID           int    `db:"gnid" json:"id"`
 	CountryCode  string `db:"code" json:"code"`
 	Name         string `db:"name" json:"name"`
 	CurrencyCode string `db:"currency_code" json:"currency_code"`

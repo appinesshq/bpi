@@ -11,7 +11,7 @@ import (
 
 func CountrySeed() (string, error) {
 	b := bytes.Buffer{}
-	fmt.Fprint(&b, "INSERT INTO countries (country_id, country_code, name, currency_code, currency_name) VALUES")
+	fmt.Fprint(&b, "INSERT INTO countries (gnid, country_code, name, currency_code, currency_name) VALUES")
 
 	p := geonames.NewParser()
 

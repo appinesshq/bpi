@@ -15,7 +15,7 @@ import (
 
 func seed(db *sqlx.DB) error {
 	const q = `
-	INSERT INTO countries (country_id, code, name, currency_code, currency_name, active) VALUES
+	INSERT INTO countries (gnid, code, name, currency_code, currency_name, active) VALUES
 	(453733, 'EE', 'Estonia', 'EUR', 'Euro', false),
 	(458258, 'LV', 'Latvia', 'EUR', 'Euro', false),
 	(597427, 'LT', 'Lithuania', 'EUR', 'Euro', true);

@@ -58,14 +58,14 @@ CREATE TABLE profiles (
 		Description: "Create table countries",
 		Script: `
 CREATE TABLE countries (
-	country_id    INT UNIQUE,
 	code  		  TEXT UNIQUE,
+	gnid    	  INT UNIQUE,
 	name 		  TEXT,
 	currency_code TEXT,
 	currency_name TEXT,
 	active BOOL DEFAULT FALSE,
 
-	PRIMARY KEY (country_id)
+	PRIMARY KEY (code)
 );`,
 	},
 	{

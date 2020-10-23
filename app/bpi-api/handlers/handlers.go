@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/appinesshq/bpi/business/auth" // Import is removed in final PR
+	"github.com/appinesshq/bpi/business/data/country"
 	"github.com/appinesshq/bpi/business/data/product"
 	"github.com/appinesshq/bpi/business/data/user"
 	"github.com/appinesshq/bpi/business/mid"
@@ -50,6 +51,14 @@ func API(build string, shutdown chan os.Signal, log *log.Logger, a *auth.Auth, d
 	app.Handle(http.MethodPost, "/v1/products", pg.create, mid.Authenticate(a))
 	app.Handle(http.MethodPut, "/v1/products/:id", pg.update, mid.Authenticate(a))
 	app.Handle(http.MethodDelete, "/v1/products/:id", pg.delete, mid.Authenticate(a))
+
+	// Register country endpoints.
+	cog := countryGroup{
+		country: country.New(log, db),
+	}
+	app.Handle(http.MethodGet, "/v1/countries/:page/:rows", cog.query, mid.Authenticate(a))
+	app.Handle(http.MethodGet, "/v1/countries/:cc", cog.queryByCode, mid.Authenticate(a))
+	app.Handle(http.MethodPut, "/v1/countries/:cc", cog.toggleActive, mid.Authenticate(a))
 
 	return app
 }
