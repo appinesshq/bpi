@@ -11,6 +11,7 @@ import (
 	"github.com/appinesshq/bpi/business/data/country"
 	"github.com/appinesshq/bpi/business/data/jurisdiction"
 	"github.com/appinesshq/bpi/business/data/product"
+	"github.com/appinesshq/bpi/business/data/profile"
 	"github.com/appinesshq/bpi/business/data/user"
 	"github.com/appinesshq/bpi/business/mid"
 	"github.com/appinesshq/bpi/foundation/web"
@@ -68,6 +69,20 @@ func API(build string, shutdown chan os.Signal, log *log.Logger, a *auth.Auth, d
 	app.Handle(http.MethodGet, "/v1/jurisdictions/:page/:rows", jg.query, mid.Authenticate(a))
 	app.Handle(http.MethodGet, "/v1/jurisdictions/:cc", jg.queryByCode, mid.Authenticate(a))
 	app.Handle(http.MethodPut, "/v1/jurisdictions/:cc", jg.toggleActive, mid.Authenticate(a))
+
+	// Register profile endpoints.
+	prg := profileGroup{
+		profile: profile.New(log, db),
+	}
+	app.Handle(http.MethodGet, "/v1/profiles/:page/:rows", prg.query, mid.Authenticate(a))
+	app.Handle(http.MethodGet, "/v1/profiles/:name", prg.queryByName, mid.Authenticate(a))
+	app.Handle(http.MethodPost, "/v1/profiles", prg.create, mid.Authenticate(a))
+	app.Handle(http.MethodPut, "/v1/profiles/:name", prg.update, mid.Authenticate(a))
+	app.Handle(http.MethodDelete, "/v1/profiles/:name", prg.delete, mid.Authenticate(a))
+
+	// User profile
+	app.Handle(http.MethodGet, "/v1/users/profile/user/:id", prg.queryByUserID, mid.Authenticate(a))
+	app.Handle(http.MethodGet, "/v1/users/:id/profile", prg.queryByUserID, mid.Authenticate(a))
 
 	return app
 }

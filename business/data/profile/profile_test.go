@@ -40,7 +40,7 @@ func TestProfile(t *testing.T) {
 			}
 
 			np := profile.NewProfile{
-				Username:    "test",
+				Name:        "test",
 				DisplayName: "Test profile",
 			}
 
@@ -50,11 +50,11 @@ func TestProfile(t *testing.T) {
 			}
 			t.Logf("\t%s\tTest %d:\tShould be able to create a profile.", tests.Success, testID)
 
-			saved, err := p.QueryByID(ctx, traceID, prf.ID)
+			saved, err := p.QueryByName(ctx, traceID, prf.Name)
 			if err != nil {
-				t.Fatalf("\t%s\tTest %d:\tShould be able to retrieve profile by ID: %s.", tests.Failed, testID, err)
+				t.Fatalf("\t%s\tTest %d:\tShould be able to retrieve profile by Name: %s.", tests.Failed, testID, err)
 			}
-			t.Logf("\t%s\tTest %d:\tShould be able to retrieve profile by ID.", tests.Success, testID)
+			t.Logf("\t%s\tTest %d:\tShould be able to retrieve profile by Name.", tests.Success, testID)
 
 			if diff := cmp.Diff(prf, saved); diff != "" {
 				t.Fatalf("\t%s\tTest %d:\tShould get back the same profile. Diff:\n%s", tests.Failed, testID, diff)
@@ -66,7 +66,7 @@ func TestProfile(t *testing.T) {
 			}
 			updatedTime := time.Date(2019, time.January, 1, 1, 1, 1, 0, time.UTC)
 
-			if err := p.Update(ctx, traceID, claims, prf.ID, upd, updatedTime); err != nil {
+			if err := p.Update(ctx, traceID, claims, prf.Name, upd, updatedTime); err != nil {
 				t.Fatalf("\t%s\tTest %d:\tShould be able to update profile : %s.", tests.Failed, testID, err)
 			}
 			t.Logf("\t%s\tTest %d:\tShould be able to update profile.", tests.Success, testID)
@@ -80,7 +80,6 @@ func TestProfile(t *testing.T) {
 			// Check specified fields were updated. Make a copy of the original profile
 			// and change just the fields we expect then diff it with what was saved.
 			want := prf
-			// want.Username = *upd.Username
 			want.DisplayName = *upd.DisplayName
 			want.DateUpdated = updatedTime
 
@@ -93,12 +92,12 @@ func TestProfile(t *testing.T) {
 				DisplayName: tests.StringPointer("My profile"),
 			}
 
-			if err := p.Update(ctx, traceID, claims, prf.ID, upd, updatedTime); err != nil {
+			if err := p.Update(ctx, traceID, claims, prf.Name, upd, updatedTime); err != nil {
 				t.Fatalf("\t%s\tTest %d:\tShould be able to update just some fields of profile : %s.", tests.Failed, testID, err)
 			}
 			t.Logf("\t%s\tTest %d:\tShould be able to update just some fields of profile.", tests.Success, testID)
 
-			saved, err = p.QueryByID(ctx, traceID, prf.ID)
+			saved, err = p.QueryByName(ctx, traceID, prf.Name)
 			if err != nil {
 				t.Fatalf("\t%s\tTest %d:\tShould be able to retrieve updated profile : %s.", tests.Failed, testID, err)
 			}
@@ -110,12 +109,12 @@ func TestProfile(t *testing.T) {
 				t.Logf("\t%s\tTest %d:\tShould be able to see updated DisplayName field.", tests.Success, testID)
 			}
 
-			if err := p.Delete(ctx, traceID, prf.ID); err != nil {
+			if err := p.Delete(ctx, traceID, prf.Name); err != nil {
 				t.Fatalf("\t%s\tTest %d:\tShould be able to delete profile : %s.", tests.Failed, testID, err)
 			}
 			t.Logf("\t%s\tTest %d:\tShould be able to delete profile.", tests.Success, testID)
 
-			_, err = p.QueryByID(ctx, traceID, prf.ID)
+			_, err = p.QueryByName(ctx, traceID, prf.Name)
 			if errors.Cause(err) != profile.ErrNotFound {
 				t.Fatalf("\t%s\tTest %d:\tShould NOT be able to retrieve deleted profile : %s.", tests.Failed, testID, err)
 			}

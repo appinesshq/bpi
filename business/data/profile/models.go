@@ -4,8 +4,8 @@ import "time"
 
 // Info represents an individual profile.
 type Info struct {
-	ID          string    `db:"profile_id" json:"id"`             // Unique identifier.
-	Username    string    `db:"username" json:"username"`         // Unique username
+	// ID          string    `db:"profile_id" json:"id"`             // Unique identifier.
+	Name        string    `db:"name" json:"name"`                 // Unique username
 	DisplayName string    `db:"display_name" json:"display_name"` // Display name of the profile.
 	UserID      string    `db:"user_id" json:"user_id"`           // ID of the user who created the profile.
 	DateCreated time.Time `db:"date_created" json:"date_created"` // When the profile was added.
@@ -14,7 +14,7 @@ type Info struct {
 
 // NewProfile is what we require from clients when adding a Profile.
 type NewProfile struct {
-	Username    string `json:"username" validate:"required"`
+	Name        string `json:"name" validate:"required"`
 	DisplayName string `json:"display_name" validate:"required"`
 }
 
@@ -25,6 +25,6 @@ type NewProfile struct {
 // explicitly blank. Normally we do not want to use pointers to basic types but
 // we make exceptions around marshalling/unmarshalling.
 type UpdateProfile struct {
-	Username    *string `json:"username"`
+	Name        *string `json:"name"`
 	DisplayName *string `json:"display_name"`
 }

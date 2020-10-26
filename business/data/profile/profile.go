@@ -9,7 +9,6 @@ import (
 
 	"github.com/appinesshq/bpi/business/auth"
 	"github.com/appinesshq/bpi/foundation/database"
-	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel/api/trace"
@@ -47,8 +46,7 @@ func (p Profile) Create(ctx context.Context, traceID string, claims auth.Claims,
 	defer span.End()
 
 	n := Info{
-		ID:          uuid.New().String(),
-		Username:        np.Username,
+		Name:        np.Name,
 		DisplayName: np.DisplayName,
 		UserID:      claims.Subject,
 		DateCreated: now.UTC(),
@@ -57,28 +55,28 @@ func (p Profile) Create(ctx context.Context, traceID string, claims auth.Claims,
 
 	const q = `
 	INSERT INTO profiles
-		(profile_id, user_id, username, display_name, date_created, date_updated)
+		(name, user_id, display_name, date_created, date_updated)
 	VALUES
-		($1, $2, $3, $4, $5, $6)`
+		($1, $2, $3, $4, $5)`
 
 	p.log.Printf("%s: %s: %s", traceID, "profile.Create",
-		database.Log(q, n.ID, n.UserID, n.Username, n.DisplayName, n.DateCreated, n.DateUpdated),
+		database.Log(q, n.Name, n.UserID, n.DisplayName, n.DateCreated, n.DateUpdated),
 	)
 
-	if _, err := p.db.ExecContext(ctx, q, n.ID, n.UserID, n.Username, n.DisplayName, n.DateCreated, n.DateUpdated); err != nil {
+	if _, err := p.db.ExecContext(ctx, q, n.Name, n.UserID, n.DisplayName, n.DateCreated, n.DateUpdated); err != nil {
 		return Info{}, errors.Wrap(err, "inserting profile")
 	}
 
 	return n, nil
 }
 
-// Update modifies data about a Profile. It will error if the specified ID is
+// Update modifies data about a Profile. It will error if the specified name is
 // invalid or does not reference an existing Profile.
-func (p Profile) Update(ctx context.Context, traceID string, claims auth.Claims, id string, up UpdateProfile, now time.Time) error {
+func (p Profile) Update(ctx context.Context, traceID string, claims auth.Claims, name string, up UpdateProfile, now time.Time) error {
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.profile.update")
 	defer span.End()
 
-	o, err := p.QueryByID(ctx, traceID, id)
+	o, err := p.QueryByName(ctx, traceID, name)
 	if err != nil {
 		return err
 	}
@@ -88,8 +86,8 @@ func (p Profile) Update(ctx context.Context, traceID string, claims auth.Claims,
 		return ErrForbidden
 	}
 
-	if up.Username != nil {
-		o.Username = *up.Username
+	if up.Name != nil {
+		o.Name = *up.Name
 	}
 	if up.DisplayName != nil {
 		o.DisplayName = *up.DisplayName
@@ -100,17 +98,17 @@ func (p Profile) Update(ctx context.Context, traceID string, claims auth.Claims,
 	UPDATE
 		profiles
 	SET
-		"username" = $2,
+		"name" = $2,
 		"display_name" = $3,
 		"date_updated" = $4
 	WHERE
-		profile_id = $1`
+		name = $1`
 
 	p.log.Printf("%s: %s: %s", traceID, "profile.Update",
-		database.Log(q, id, o.Username, o.DisplayName, o.DateUpdated),
+		database.Log(q, o.Name, o.Name, o.DisplayName, o.DateUpdated),
 	)
 
-	if _, err = p.db.ExecContext(ctx, q, id, o.Username, o.DisplayName, o.DateUpdated); err != nil {
+	if _, err = p.db.ExecContext(ctx, q, o.Name, o.Name, o.DisplayName, o.DateUpdated); err != nil {
 		return errors.Wrap(err, "updating profile")
 	}
 
@@ -118,26 +116,22 @@ func (p Profile) Update(ctx context.Context, traceID string, claims auth.Claims,
 }
 
 // Delete removes the profile identified by a given ID.
-func (p Profile) Delete(ctx context.Context, traceID string, id string) error {
+func (p Profile) Delete(ctx context.Context, traceID string, name string) error {
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.profile.delete")
 	defer span.End()
-
-	if _, err := uuid.Parse(id); err != nil {
-		return ErrInvalidID
-	}
 
 	const q = `
 	DELETE FROM
 		profiles
 	WHERE
-		profile_id = $1`
+		name = $1`
 
 	p.log.Printf("%s: %s: %s", traceID, "profile.Delete",
-		database.Log(q, id),
+		database.Log(q, name),
 	)
 
-	if _, err := p.db.ExecContext(ctx, q, id); err != nil {
-		return errors.Wrapf(err, "deleting profile %s", id)
+	if _, err := p.db.ExecContext(ctx, q, name); err != nil {
+		return errors.Wrapf(err, "deleting profile %s", name)
 	}
 
 	return nil
@@ -165,29 +159,24 @@ func (p Profile) Query(ctx context.Context, traceID string, pageNumber int, rows
 	return o, nil
 }
 
-// QueryByID finds the profile identified by a given ID.
-func (p Profile) QueryByID(ctx context.Context, traceID string, id string) (Info, error) {
-	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.profile.querybyid")
+// QueryByName finds the profile identified by a given name.
+func (p Profile) QueryByName(ctx context.Context, traceID string, name string) (Info, error) {
+	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.profile.querybyname")
 	defer span.End()
-
-	if _, err := uuid.Parse(id); err != nil {
-		return Info{}, ErrInvalidID
-	}
 
 	const q = `
 	SELECT 
 		* FROM profiles
 	WHERE
-		profile_id = $1
-	GROUP BY
-		profile_id`
+		name = $1
+	`
 
-	p.log.Printf("%s: %s: %s", traceID, "profile.QueryByID",
-		database.Log(q, id),
+	p.log.Printf("%s: %s: %s", traceID, "profile.QueryByName",
+		database.Log(q, name),
 	)
 
 	var o Info
-	if err := p.db.GetContext(ctx, &o, q, id); err != nil {
+	if err := p.db.GetContext(ctx, &o, q, name); err != nil {
 		if err == sql.ErrNoRows {
 			return Info{}, ErrNotFound
 		}
@@ -197,22 +186,17 @@ func (p Profile) QueryByID(ctx context.Context, traceID string, id string) (Info
 	return o, nil
 }
 
-// QueryByUserID finds the profile identified by a given ID.
+// QueryByUserID finds the profile identified by a given user ID.
 func (p Profile) QueryByUserID(ctx context.Context, traceID string, userID string) (Info, error) {
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.profile.querybyuserid")
 	defer span.End()
-
-	if _, err := uuid.Parse(userID); err != nil {
-		return Info{}, ErrInvalidID
-	}
 
 	const q = `
 	SELECT 
 		* FROM profiles
 	WHERE
 		user_id = $1
-	GROUP BY
-		profile_id`
+	`
 
 	p.log.Printf("%s: %s: %s", traceID, "profile.QueryByUserID",
 		database.Log(q, userID),

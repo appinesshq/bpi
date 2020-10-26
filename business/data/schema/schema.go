@@ -43,14 +43,13 @@ CREATE TABLE users (
 		Description: "Create table profiles",
 		Script: `
 CREATE TABLE profiles (
-	profile_id   UUID,
-	username     TEXT UNIQUE,
+	name     TEXT UNIQUE,
 	display_name TEXT,
 	user_id UUID DEFAULT '00000000-0000-0000-0000-000000000000',
 	date_created TIMESTAMP,
 	date_updated TIMESTAMP,
 
-	PRIMARY KEY (profile_id)
+	PRIMARY KEY (name)
 );`,
 	},
 	{
