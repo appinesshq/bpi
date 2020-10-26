@@ -84,6 +84,7 @@ func (pt *ProfileTests) postProfile400(t *testing.T) {
 				Fields: []web.FieldError{
 					{Field: "name", Error: "name is a required field"},
 					{Field: "display_name", Error: "display_name is a required field"},
+					{Field: "type", Error: "type is a required field"},
 				},
 			}
 
@@ -243,6 +244,7 @@ func (pt *ProfileTests) postProfile201(t *testing.T) profile.Info {
 	np := profile.NewProfile{
 		Name:        "test",
 		DisplayName: "Test profile",
+		Type:        "USR",
 	}
 
 	body, err := json.Marshal(&np)

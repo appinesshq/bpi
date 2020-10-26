@@ -41,6 +41,7 @@ func TestProfile(t *testing.T) {
 
 			np := profile.NewProfile{
 				Name:        "test",
+				Type:        "USR",
 				DisplayName: "Test profile",
 			}
 

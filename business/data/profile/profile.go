@@ -45,9 +45,15 @@ func (p Profile) Create(ctx context.Context, traceID string, claims auth.Claims,
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.profile.create")
 	defer span.End()
 
+	t, err := TypeFromString(np.Type)
+	if err != nil {
+		return Info{}, errors.Wrap(err, "getting profile type")
+	}
+
 	n := Info{
 		Name:        np.Name,
 		DisplayName: np.DisplayName,
+		Type:        *t,
 		UserID:      claims.Subject,
 		DateCreated: now.UTC(),
 		DateUpdated: now.UTC(),
@@ -55,15 +61,15 @@ func (p Profile) Create(ctx context.Context, traceID string, claims auth.Claims,
 
 	const q = `
 	INSERT INTO profiles
-		(name, user_id, display_name, date_created, date_updated)
+		(name, user_id, display_name, type, date_created, date_updated)
 	VALUES
-		($1, $2, $3, $4, $5)`
+		($1, $2, $3, $4, $5, $6)`
 
 	p.log.Printf("%s: %s: %s", traceID, "profile.Create",
-		database.Log(q, n.Name, n.UserID, n.DisplayName, n.DateCreated, n.DateUpdated),
+		database.Log(q, n.Name, n.UserID, n.DisplayName, n.Type, n.DateCreated, n.DateUpdated),
 	)
 
-	if _, err := p.db.ExecContext(ctx, q, n.Name, n.UserID, n.DisplayName, n.DateCreated, n.DateUpdated); err != nil {
+	if _, err := p.db.ExecContext(ctx, q, n.Name, n.UserID, n.DisplayName, n.Type, n.DateCreated, n.DateUpdated); err != nil {
 		return Info{}, errors.Wrap(err, "inserting profile")
 	}
 
@@ -186,19 +192,19 @@ func (p Profile) QueryByName(ctx context.Context, traceID string, name string) (
 	return o, nil
 }
 
-// QueryByUserID finds the profile identified by a given user ID.
-func (p Profile) QueryByUserID(ctx context.Context, traceID string, userID string) (Info, error) {
-	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.profile.querybyuserid")
+// QueryUserProfile finds the profile identified by a given user ID.
+func (p Profile) QueryUserProfile(ctx context.Context, traceID string, userID string) (Info, error) {
+	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.profile.QueryUserProfile")
 	defer span.End()
 
 	const q = `
 	SELECT 
 		* FROM profiles
 	WHERE
-		user_id = $1
+		user_id = $1 AND type='USR'
 	`
 
-	p.log.Printf("%s: %s: %s", traceID, "profile.QueryByUserID",
+	p.log.Printf("%s: %s: %s", traceID, "profile.QueryUserProfile",
 		database.Log(q, userID),
 	)
 

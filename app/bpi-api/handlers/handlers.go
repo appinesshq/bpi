@@ -81,8 +81,8 @@ func API(build string, shutdown chan os.Signal, log *log.Logger, a *auth.Auth, d
 	app.Handle(http.MethodDelete, "/v1/profiles/:name", prg.delete, mid.Authenticate(a))
 
 	// User profile
-	app.Handle(http.MethodGet, "/v1/users/profile/user/:id", prg.queryByUserID, mid.Authenticate(a))
-	app.Handle(http.MethodGet, "/v1/users/:id/profile", prg.queryByUserID, mid.Authenticate(a))
+	app.Handle(http.MethodGet, "/v1/users/profile/user/:id", prg.QueryUserProfile, mid.Authenticate(a))
+	app.Handle(http.MethodGet, "/v1/users/:id/profile", prg.QueryUserProfile, mid.Authenticate(a))
 
 	return app
 }

@@ -69,7 +69,7 @@ func (pg profileGroup) queryByName(ctx context.Context, w http.ResponseWriter, r
 	return web.Respond(ctx, w, prod, http.StatusOK)
 }
 
-func (pg profileGroup) queryByUserID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (pg profileGroup) QueryUserProfile(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "handlers.profileGroup.queryByID")
 	defer span.End()
 
@@ -79,7 +79,7 @@ func (pg profileGroup) queryByUserID(ctx context.Context, w http.ResponseWriter,
 	}
 
 	params := web.Params(r)
-	prod, err := pg.profile.QueryByUserID(ctx, v.TraceID, params["id"])
+	prod, err := pg.profile.QueryUserProfile(ctx, v.TraceID, params["id"])
 	if err != nil {
 		switch err {
 		case profile.ErrInvalidID:
