@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/appinesshq/bpi/business/auth" // Import is removed in final PR
+	"github.com/appinesshq/bpi/business/data/category"
 	"github.com/appinesshq/bpi/business/data/country"
 	"github.com/appinesshq/bpi/business/data/jurisdiction"
 	"github.com/appinesshq/bpi/business/data/product"
@@ -83,6 +84,16 @@ func API(build string, shutdown chan os.Signal, log *log.Logger, a *auth.Auth, d
 	// User profile
 	app.Handle(http.MethodGet, "/v1/users/profile/user/:id", prg.QueryUserProfile, mid.Authenticate(a))
 	app.Handle(http.MethodGet, "/v1/users/:id/profile", prg.QueryUserProfile, mid.Authenticate(a))
+
+	// Register category endpoints.
+	cag := categoryGroup{
+		category: category.New(log, db),
+	}
+	app.Handle(http.MethodGet, "/v1/categories/:page/:rows", cag.query, mid.Authenticate(a))
+	app.Handle(http.MethodGet, "/v1/categories/:id", cag.queryByID, mid.Authenticate(a))
+	app.Handle(http.MethodPost, "/v1/categories", cag.create, mid.Authenticate(a))
+	app.Handle(http.MethodPut, "/v1/categories/:id", cag.update, mid.Authenticate(a))
+	app.Handle(http.MethodDelete, "/v1/categories/:id", cag.delete, mid.Authenticate(a))
 
 	return app
 }

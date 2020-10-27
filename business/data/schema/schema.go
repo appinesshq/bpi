@@ -83,7 +83,7 @@ CREATE TABLE jurisdictions (
 	FOREIGN KEY (country_code) REFERENCES countries(code) ON DELETE CASCADE
 );`,
 	},
-	// FOREIGN KEY (parent_id) REFERENCES categories(category_id) ON DELETE SET NULL
+	//   REFERENCES categories(category_id),
 	{
 		Version:     1.5,
 		Description: "Create table categories",
@@ -93,11 +93,12 @@ CREATE TABLE categories (
 	slug          TEXT UNIQUE,
 	name 		  TEXT,
 	user_id 	  UUID  DEFAULT '00000000-0000-0000-0000-000000000000',
-	parent_id     UUID  REFERENCES categories(category_id),
+	parent_id     UUID,
 	date_created TIMESTAMP,
 	date_updated TIMESTAMP,
 	
-	PRIMARY KEY (category_id)
+	PRIMARY KEY (category_id),
+	FOREIGN KEY (parent_id) REFERENCES categories(category_id) ON DELETE SET NULL
 );`,
 	},
 	{
