@@ -38,6 +38,9 @@ func Respond(ctx context.Context, w http.ResponseWriter, data interface{}, statu
 	// Set the content type and headers once we know marshaling has succeeded.
 	w.Header().Set("Content-Type", "application/json")
 
+	// Set the allow origin to ensure to prevent CORS failures on the client side.
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	// Write the status code to the response.
 	w.WriteHeader(statusCode)
 

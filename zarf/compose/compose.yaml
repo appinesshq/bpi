@@ -34,6 +34,18 @@ services:
       - zipkin
       - db
 
+  bpi-ui:
+    container_name: bpi-ui
+    networks:
+      - shared-network
+    image: bpi-ui-amd64:1.0
+    ports:
+      - 80:80     # HTTP
+      - 443:443   # TLS
+      - 4002:4002 # DEBUG API
+    depends_on:
+      - zipkin
+
   metrics:
     container_name: metrics
     networks:

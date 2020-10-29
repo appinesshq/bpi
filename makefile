@@ -21,12 +21,20 @@ export PROJECT = bpi
 # ==============================================================================
 # Building containers
 
-all: api metrics
+all: api ui metrics
 
 api:
 	docker build \
 		-f zarf/docker/dockerfile.bpi-api \
 		-t bpi-api-amd64:1.0 \
+		--build-arg VCS_REF=`git rev-parse HEAD` \
+		--build-arg BUILD_DATE=`date -u +”%Y-%m-%dT%H:%M:%SZ”` \
+		.
+
+ui:
+	docker build \
+		-f zarf/docker/dockerfile.bpi-ui \
+		-t bpi-ui-amd64:1.0 \
 		--build-arg VCS_REF=`git rev-parse HEAD` \
 		--build-arg BUILD_DATE=`date -u +”%Y-%m-%dT%H:%M:%SZ”` \
 		.

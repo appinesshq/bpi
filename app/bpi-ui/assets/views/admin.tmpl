@@ -1,0 +1,32 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>BPI admin</title>
+  <meta name="description" content="BPI Admin">
+  <meta name="author" content="MB Appiness Solutions">
+
+  <link rel="stylesheet" href="/assets/styles/main.css?v=1.0">
+</head>
+
+<body>
+  {{ . }}
+  <div id="app">
+    {{ `{{ counter }}` }}
+    <button v-on:click="login">Login</button>
+  </div>
+  <script>
+    const api_host = {{ .ApiHost }};
+    const auth_token = {{ .AuthToken }};
+  </script>
+
+  <script src="https://unpkg.com/vue@next"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="https://unpkg.com/vuex@next"></script>
+
+  <script src="/assets/scripts/admin/admin.js"></script>
+  <script src="/assets/scripts/app.js"></script>
+</body>
+</html>

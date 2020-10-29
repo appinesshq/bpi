@@ -1,0 +1,48 @@
+# Build the Go Binary.
+FROM golang:1.15.2 as build_bpi-ui
+ENV CGO_ENABLED 0
+ARG VCS_REF
+
+# Create a location in the container for the source code. Using the
+# default GOPATH location.
+RUN mkdir -p /service
+
+# Copy the module files first and then download the dependencies. If this
+# doesn't change, we won't need to do this again in future builds.
+# COPY go.* /service/
+# WORKDIR /service
+# RUN go mod download
+
+# Copy the source code into the container.
+WORKDIR /service
+COPY . .
+
+# Build the admin tool so we can have it in the container. This should not change
+# often so do this first.
+# WORKDIR /service/app/bpi-admin
+# RUN go build -ldflags "-X main.build=${VCS_REF}"
+
+# Build the service binary. We are doing this last since this will be different
+# every time we run through this process.
+WORKDIR /service/app/bpi-ui
+RUN go build -ldflags "-X main.build=${VCS_REF}"
+
+
+# Run the Go Binary in Alpine.
+FROM alpine:3.12
+ARG BUILD_DATE
+ARG VCS_REF
+ARG PACKAGE_NAME
+ARG PACKAGE_PREFIX
+
+COPY --from=build_bpi-ui /service/app/bpi-ui/assets /app/assets
+COPY --from=build_bpi-ui /service/app/bpi-ui/bpi-ui /app/bpi-ui
+WORKDIR /app
+CMD ["./bpi-ui"]
+
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.title="bpi-ui" \
+      org.opencontainers.image.authors="Arjan van Eersel <arjan@appiness.solutions>" \
+      org.opencontainers.image.source="https://github.com/appinesshq/bpi/app/bpi-ui" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.vendor="MB Appiness Solutions"

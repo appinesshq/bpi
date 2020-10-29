@@ -191,8 +191,10 @@ func (ug userGroup) token(ctx context.Context, w http.ResponseWriter, r *http.Re
 	params := web.Params(r)
 
 	var tkn struct {
-		Token string `json:"token"`
+		Token     string `json:"token"`
+		ExpiresAt int64  `json:"expires_at"`
 	}
+	tkn.ExpiresAt = claims.ExpiresAt
 	tkn.Token, err = ug.auth.GenerateToken(params["kid"], claims)
 	if err != nil {
 		return errors.Wrap(err, "generating token")

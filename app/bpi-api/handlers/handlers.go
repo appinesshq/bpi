@@ -3,6 +3,7 @@
 package handlers
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -18,6 +19,22 @@ import (
 	"github.com/appinesshq/bpi/foundation/web"
 	"github.com/jmoiron/sqlx"
 )
+
+// Setup the default CORS settings
+// allowedHeaders := []string{"X-Requested-With", "Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"}
+// allowedMethods := []string{"GET", "HEAD", "POST", "PUT", "OPTIONS"}
+// corsOrigin := handlers.AllowedOrigins([]string{"*"})
+// corsHeaders := handlers.AllowedHeaders(allowedHeaders)
+// corsMethods := handlers.AllowedMethods(allowedMethods)
+
+// optionsHandler is a HandlerFunc to deal with preflight CORS requests.
+func optionsHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+
+	return web.Respond(ctx, w, nil, http.StatusOK)
+}
 
 // API constructs an http.Handler with all application routes defined.
 func API(build string, shutdown chan os.Signal, log *log.Logger, a *auth.Auth, db *sqlx.DB) http.Handler {
@@ -94,6 +111,9 @@ func API(build string, shutdown chan os.Signal, log *log.Logger, a *auth.Auth, d
 	app.Handle(http.MethodPost, "/v1/categories", cag.create, mid.Authenticate(a))
 	app.Handle(http.MethodPut, "/v1/categories/:id", cag.update, mid.Authenticate(a))
 	app.Handle(http.MethodDelete, "/v1/categories/:id", cag.delete, mid.Authenticate(a))
+
+	// Register handler for pre-flight CORS requests
+	app.Handle(http.MethodOptions, "/v1/*path", optionsHandler)
 
 	return app
 }

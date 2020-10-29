@@ -1,0 +1,202 @@
+package main
+
+import (
+	"context"
+	"expvar" // Register the expvar handlers
+	"fmt"
+	"log"
+	"net/http"
+	_ "net/http/pprof" // Register the pprof handlers
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/appinesshq/bpi/app/bpi-ui/handlers"
+	"github.com/ardanlabs/conf"
+	"github.com/pkg/errors"
+	"go.opentelemetry.io/otel/api/global"
+	"go.opentelemetry.io/otel/exporters/trace/zipkin"
+	"go.opentelemetry.io/otel/sdk/trace"
+)
+
+/*
+Need to figure out timeouts for http service.
+You might want to reset your DB_HOST env var during test tear down.
+Service should start even without a DB running yet.
+symbols in profiles: https://github.com/golang/go/issues/23376 / https://github.com/google/pprof/pull/366
+*/
+
+// build is the git version of this program. It is set using build flags in the makefile.
+var build = "develop"
+
+func main() {
+	log := log.New(os.Stdout, "UI : ", log.LstdFlags|log.Lmicroseconds|log.Lshortfile)
+
+	if err := run(log); err != nil {
+		log.Println("main: error:", err)
+		os.Exit(1)
+	}
+}
+
+func run(log *log.Logger) error {
+
+	// =========================================================================
+	// Configuration
+
+	var cfg struct {
+		conf.Version
+		Web struct {
+			APIHost         string        `conf:"default:0.0.0.0:3000"`
+			UIHost          string        `conf:"default:0.0.0.0:80"`
+			DebugHost       string        `conf:"default:0.0.0.0:4002"`
+			ReadTimeout     time.Duration `conf:"default:5s"`
+			WriteTimeout    time.Duration `conf:"default:5s"`
+			ShutdownTimeout time.Duration `conf:"default:5s"`
+			Index           string        `conf:"default:dobie.tmpl"`
+		}
+		Zipkin struct {
+			ReporterURI string  `conf:"default:http://zipkin:9411/api/v2/spans"`
+			ServiceName string  `conf:"default:bpi-ui"`
+			Probability float64 `conf:"default:0.05"`
+		}
+	}
+	cfg.Version.SVN = build
+	cfg.Version.Desc = "copyright information here"
+
+	if err := conf.Parse(os.Args[1:], "BPI", &cfg); err != nil {
+		switch err {
+		case conf.ErrHelpWanted:
+			usage, err := conf.Usage("BPI", &cfg)
+			if err != nil {
+				return errors.Wrap(err, "generating config usage")
+			}
+			fmt.Println(usage)
+			return nil
+		case conf.ErrVersionWanted:
+			version, err := conf.VersionString("BPI", &cfg)
+			if err != nil {
+				return errors.Wrap(err, "generating config version")
+			}
+			fmt.Println(version)
+			return nil
+		}
+		return errors.Wrap(err, "parsing config")
+	}
+
+	// =========================================================================
+	// App Starting
+
+	// Print the build version for our logs. Also expose it under /debug/vars.
+	expvar.NewString("build").Set(build)
+	log.Printf("main : Started : Application initializing : version %q", build)
+	defer log.Println("main: Completed")
+
+	out, err := conf.String(&cfg)
+	if err != nil {
+		return errors.Wrap(err, "generating config for output")
+	}
+	log.Printf("main: Config :\n%v\n", out)
+
+	// =========================================================================
+	// Start Tracing Support
+
+	// WARNING: The current Init settings are using defaults which may not be
+	// compatible with your project. Please review the documentation for
+	// opentelemetry.
+
+	log.Println("main: Initializing OT/Zipkin tracing support")
+
+	exporter, err := zipkin.NewRawExporter(
+		cfg.Zipkin.ReporterURI,
+		cfg.Zipkin.ServiceName,
+		zipkin.WithLogger(log),
+	)
+	if err != nil {
+		return errors.Wrap(err, "creating new exporter")
+	}
+
+	tp := trace.NewTracerProvider(
+		trace.WithConfig(trace.Config{DefaultSampler: trace.TraceIDRatioBased(cfg.Zipkin.Probability)}),
+		trace.WithBatcher(exporter,
+			trace.WithMaxExportBatchSize(trace.DefaultMaxExportBatchSize),
+			trace.WithBatchTimeout(trace.DefaultBatchTimeout),
+			trace.WithMaxExportBatchSize(trace.DefaultMaxExportBatchSize),
+		),
+	)
+
+	global.SetTracerProvider(tp)
+
+	// =========================================================================
+	// Start Debug Service
+	//
+	// /debug/pprof - Added to the default mux by importing the net/http/pprof package.
+	// /debug/vars - Added to the default mux by importing the expvar package.
+	//
+	// Not concerned with shutting this down when the application is shutdown.
+
+	log.Println("main: Initializing debugging support")
+
+	go func() {
+		log.Printf("main: Debug Listening %s", cfg.Web.DebugHost)
+		if err := http.ListenAndServe(cfg.Web.DebugHost, http.DefaultServeMux); err != nil {
+			log.Printf("main: Debug Listener closed : %v", err)
+		}
+	}()
+
+	// =========================================================================
+	// Start UI Service
+
+	log.Println("main: Initializing UI support")
+
+	// Make a channel to listen for an interrupt or terminate signal from the OS.
+	// Use a buffered channel because the signal package requires it.
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
+
+	handler, err := handlers.API(build, cfg.Web.Index, cfg.Web.APIHost, shutdown, log)
+	if err != nil {
+		return err
+	}
+
+	api := http.Server{
+		Addr:         cfg.Web.UIHost,
+		Handler:      handler,
+		ReadTimeout:  cfg.Web.ReadTimeout,
+		WriteTimeout: cfg.Web.WriteTimeout,
+	}
+
+	// Make a channel to listen for errors coming from the listener. Use a
+	// buffered channel so the goroutine can exit if we don't collect this error.
+	serverErrors := make(chan error, 1)
+
+	// Start the service listening for requests.
+	go func() {
+		log.Printf("main: UI listening on %s", api.Addr)
+		serverErrors <- api.ListenAndServe()
+	}()
+
+	// =========================================================================
+	// Shutdown
+
+	// Blocking main and waiting for shutdown.
+	select {
+	case err := <-serverErrors:
+		return errors.Wrap(err, "server error")
+
+	case sig := <-shutdown:
+		log.Printf("main: %v : Start shutdown", sig)
+
+		// Give outstanding requests a deadline for completion.
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.Web.ShutdownTimeout)
+		defer cancel()
+
+		// Asking listener to shutdown and shed load.
+		if err := api.Shutdown(ctx); err != nil {
+			api.Close()
+			return errors.Wrap(err, "could not stop server gracefully")
+		}
+	}
+
+	return nil
+}
