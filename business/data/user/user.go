@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/appinesshq/bpi/business/auth"
@@ -204,6 +205,10 @@ func (u User) Query(ctx context.Context, traceID string, pageNumber int, rowsPer
 func (u User) QueryByID(ctx context.Context, traceID string, claims auth.Claims, userID string) (Info, error) {
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "business.data.user.querybyid")
 	defer span.End()
+
+	if strings.ToLower(userID) == "me" {
+		userID = claims.Subject
+	}
 
 	if _, err := uuid.Parse(userID); err != nil {
 		return Info{}, ErrInvalidID
