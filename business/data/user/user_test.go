@@ -207,6 +207,17 @@ func TestAuthenticate(t *testing.T) {
 				t.Fatalf("\t%s\tTest %d:\tShould get back the expected claims. Diff:\n%s", tests.Failed, testID, diff)
 			}
 			t.Logf("\t%s\tTest %d:\tShould get back the expected claims.", tests.Success, testID)
+
+			usr2, err := u.QueryByID(ctx, traceID, claims, "me")
+			if err != nil {
+				t.Fatalf("\t%s\tTest %d:\tShould be able to use \"me\" as ID : %s.", tests.Failed, testID, err)
+			}
+			t.Logf("\t%s\tTest %d:\thould be able to use \"me\" as ID.", tests.Success, testID)
+
+			if diff := cmp.Diff(usr, usr2); diff != "" {
+				t.Fatalf("\t%s\tTest %d:\tShould get back the same user. Diff:\n%s", tests.Failed, testID, diff)
+			}
+			t.Logf("\t%s\tTest %d:\tShould get back the same user.", tests.Success, testID)
 		}
 	}
 }
