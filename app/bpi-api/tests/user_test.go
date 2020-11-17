@@ -435,7 +435,7 @@ func (ut *UserTests) postUser201(t *testing.T) user.Info {
 			// Define what we wanted to receive. We will just trust the generated
 			// fields like ID and Dates so we copy u.
 			exp := got
-			exp.Email = "04fc70738bdb6cbb35091f4f7fd0f385cc59b15a28751c856b1786d917969988"
+			exp.Email = "3a2f82ba79a8eb827b23d91fca53959d3aa3cb6cfd917863d619ac8ee360c5e2"
 			exp.Roles = []string{auth.RoleAdmin}
 
 			if diff := cmp.Diff(got, exp); diff != "" {
@@ -496,7 +496,7 @@ func (ut *UserTests) getUser200(t *testing.T, id string) {
 			// fields like Dates so we copy p.
 			exp := got
 			exp.ID = id
-			exp.Email = "04fc70738bdb6cbb35091f4f7fd0f385cc59b15a28751c856b1786d917969988"
+			exp.Email = "3a2f82ba79a8eb827b23d91fca53959d3aa3cb6cfd917863d619ac8ee360c5e2"
 			exp.Roles = []string{auth.RoleAdmin}
 
 			if diff := cmp.Diff(got, exp); diff != "" {
@@ -543,8 +543,8 @@ func (ut *UserTests) putUser204(t *testing.T, id string) {
 				t.Fatalf("\t%s\tTest %d:\tShould be able to unmarshal the response : %v", tests.Failed, testID, err)
 			}
 
-			if ru.Email != "931c4723049729bc7b391a5d60d4c9cf84a963218c0da1f408144852a6ef78fa" {
-				t.Fatalf("\t%s\tTest %d:\tShould see an updated Email : got %q want %q", tests.Failed, testID, ru.Email, "931c4723049729bc7b391a5d60d4c9cf84a963218c0da1f408144852a6ef78fa")
+			if ru.Email != "8e399820c133d2bc35bd94b30610e02e2891f5053a430b74fa32bf41f1de1d57" {
+				t.Fatalf("\t%s\tTest %d:\tShould see an updated Email : got %q want %q", tests.Failed, testID, ru.Email, "8e399820c133d2bc35bd94b30610e02e2891f5053a430b74fa32bf41f1de1d57")
 			}
 			t.Logf("\t%s\tTest %d:\tShould see an updated Email.", tests.Success, testID)
 

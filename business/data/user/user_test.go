@@ -88,10 +88,10 @@ func TestUser(t *testing.T) {
 			}
 			t.Logf("\t%s\tTest %d:\tShould be able to retrieve user by Email.", tests.Success, testID)
 
-			if saved.Email != "931c4723049729bc7b391a5d60d4c9cf84a963218c0da1f408144852a6ef78fa" {
+			if saved.Email != "8e399820c133d2bc35bd94b30610e02e2891f5053a430b74fa32bf41f1de1d57" {
 				t.Errorf("\t%s\tTest %d:\tShould be able to see updates to Email.", tests.Failed, testID)
 				t.Logf("\t\tTest %d:\tGot: %v", testID, saved.Email)
-				t.Logf("\t\tTest %d:\tExp: %v", testID, "931c4723049729bc7b391a5d60d4c9cf84a963218c0da1f408144852a6ef78fa")
+				t.Logf("\t\tTest %d:\tExp: %v", testID, "8e399820c133d2bc35bd94b30610e02e2891f5053a430b74fa32bf41f1de1d57")
 			} else {
 				t.Logf("\t%s\tTest %d:\tShould be able to see updates to Email.", tests.Success, testID)
 			}
