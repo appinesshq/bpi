@@ -218,6 +218,11 @@ func TestAuthenticate(t *testing.T) {
 				t.Fatalf("\t%s\tTest %d:\tShould get back the same user. Diff:\n%s", tests.Failed, testID, diff)
 			}
 			t.Logf("\t%s\tTest %d:\tShould get back the same user.", tests.Success, testID)
+
+			if _, err := u.Authenticate(ctx, traceID, now, "jane@example.com", "blahblah"); err == nil {
+				t.Fatalf("\t%s\tTest %d:\tShould not be able to login with a wrong password.", tests.Failed, testID)
+			}
+			t.Logf("\t%s\tTest %d:\tShould not be able to login with a wrong password.", tests.Success, testID)
 		}
 	}
 }

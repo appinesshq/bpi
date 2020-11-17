@@ -46,7 +46,7 @@ var (
 
 // HashEmail hashes the provided email address for GDPR compliance.
 func hashEmail(email string) string {
-	sum := sha256.Sum256([]byte(EmailSalt + email))
+	sum := sha256.Sum256([]byte(email+EmailSalt))
 	return fmt.Sprintf("%x", sum)
 }
 
@@ -69,7 +69,7 @@ func (u User) Create(ctx context.Context, traceID string, nu NewUser, now time.T
 	ctx, span := trace.SpanFromContext(ctx).Tracer().Start(ctx, "internal.data.user.create")
 	defer span.End()
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(PasswordSalt+nu.Password), bcrypt.DefaultCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte(nu.Password+PasswordSalt), bcrypt.DefaultCost)
 	if err != nil {
 		return Info{}, errors.Wrap(err, "generating password hash")
 	}
@@ -312,7 +312,7 @@ func (u User) Authenticate(ctx context.Context, traceID string, now time.Time, e
 
 	// Compare the provided password with the saved hash. Use the bcrypt
 	// comparison function so it is cryptographically secure.
-	if err := bcrypt.CompareHashAndPassword(usr.PasswordHash, []byte(PasswordSalt+password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword(usr.PasswordHash, []byte(password+PasswordSalt)); err != nil {
 		return auth.Claims{}, ErrAuthenticationFailure
 	}
 
