@@ -28,7 +28,7 @@ services:
       - shared-network
     image: bpi-api-amd64:1.0
     ports:
-      - 3000:3000 # CRUD API
+      - 5000:5000 # CRUD API
       - 4000:4000 # DEBUG API
     depends_on:
       - zipkin
